@@ -34,30 +34,31 @@ def read_image_data(data):
     frame_RGB = cv2.fastNlMeansDenoisingColored(frame_RGB,None,10,10,7,21)
     
 
-    #primera columna
+    #primeras 6 columnas columna
     primer_blanco_izq = -1
-    for indice, y in enumerate(frame_RGB[0]):
+    for indice_fila, fila in enumerate(frame_RGB):
+        for indice_columna in range(0,6):
+        
         #revisar las 6 columnas adyacentes a la izquierda
-        for i in range(0,6):
+        
             #hay color blanco
-            pixel = frame_RGB[i][indice]
+            pixel = fila[indice_columna]
             if(pixel[0] > 100 and pixel[1] > 100 and pixel[2] > 100):
-                primer_blanco_izq = indice
+                primer_blanco_izq = indice_fila
                 break
         
         #para salir del otro for
         if primer_blanco_izq > 0:
             break
 
-    #ultima columna
+    #ultimas 6 columnas
     primer_blanco_der = -1
-    for indice, y in enumerate(frame_RGB[-1]):
-        #revisar las 6 columnas adyacentes a la derecha
-        for i in range(0,6):
+    for indice_fila, fila in enumerate(frame_RGB):
+        for indice_columna in range(0,6):
             #hay color blanco
-            pixel = frame_RGB[-1 - i][indice]
+            pixel = fila[-1 - indice_columna]
             if(pixel[0] > 100 and pixel[1] > 100 and pixel[2] > 100):
-                primer_blanco_der = indice
+                primer_blanco_der = indice_fila
                 print(primer_blanco_der)
                 break
         
