@@ -42,7 +42,7 @@ def read_image_data(data):
         #revisar las 6 columnas adyacentes a la izquierda
         
             #hay color blanco
-            pixel = fila[indice_columna]
+            pixel = frame_RGB[-1 - indice_fila][indice_columna]
             if(pixel[0] > 100 and pixel[1] > 100 and pixel[2] > 100):
                 primer_blanco_izq = indice_fila
                 break
@@ -56,7 +56,7 @@ def read_image_data(data):
     for indice_fila, fila in enumerate(frame_RGB):
         for indice_columna in range(0,6):
             #hay color blanco
-            pixel = fila[-1 - indice_columna]
+            pixel = frame_RGB[-1 - indice_fila][-1 - indice_columna]
             if(pixel[0] > 100 and pixel[1] > 100 and pixel[2] > 100):
                 primer_blanco_der = indice_fila
                 print(primer_blanco_der)
@@ -70,23 +70,32 @@ def read_image_data(data):
     print(frame_RGB.shape)
 
 
-    k = -1/20
+    k = 1/240
+    vel_angular_max = 1.5
 
     twist = Twist()
-    twist.linear = Vector3(0.2,0,0)
+    twist.linear = Vector3(0.1,0,0)
 
     #para que no afecte el ruido (es una especie de histeresis)
+    
     if abs((primer_blanco_izq - primer_blanco_der)) > 1:
         #si hay mucha diferencia entre donde empieza el color blanco a la izquierda y a la derecha, hacer que robot gire con controlador proporcional el motor
-        twist.angular = Vector3(0, 0, (primer_blanco_izq - primer_blanco_der) * k)
+        vel_angular = (primer_blanco_izq - primer_blanco_der) * k
+        if vel_angular > vel_angular_max:
+            vel_angular = vel_angular_max
+            
+        if vel_angular < -vel_angular_max:
+            vel_angular = -vel_angular_max
+            
+        twist.angular = Vector3(0, 0, vel_angular)
     
     motor_pub.publish(twist)
-
+    print(twist)
 
     print(primer_blanco_izq, primer_blanco_der)
-    cv2.imshow("Image window", frame_RGB)
-    cv2.imshow("Video", cv_image)
-    cv2.waitKey(3)
+   # cv2.imshow("Image window", frame_RGB)
+    #cv2.imshow("Video", cv_image)
+    #cv2.waitKey(3)
 
     try:
         image_pub.publish(CvBridge().cv2_to_imgmsg(frame_RGB, "bgr8"))
