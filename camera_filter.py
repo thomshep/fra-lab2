@@ -24,14 +24,42 @@ def read_image_data(data):
     mask = cv2.inRange(frame_HSV, (160, 131, 89), (189,255, 255))
     #blanco
     mask = cv2.inRange(frame_HSV, (0,0, 220), (30,30, 255))
-
-    frame_RGB = cv2.bitwise_and(cv_image,cv_image,mask = mask)
     
+    edges = cv2.Canny(mask, 200, 400)
+    #recortar parte de arriba imagen?
+    cropped_edges = cv2.bitwise_and(cv_image,cv_image,mask=edges)
+    imagen_edges_gris = cv2.cvtColor(cropped_edges, cv2.COLOR_BGR2GRAY)
+
+    frame_RGB = cropped_edges
+
+    def detect_line_segments(cropped_edges):
+        # tuning min_threshold, minLineLength, maxLineGap is a trial and error process by hand
+        rho = 1  # distance precision in pixel, i.e. 1 pixel
+        angle = np.pi / 180  # angular precision in radian, i.e. 1 degree
+        min_threshold = 10  # minimal of votes
+        line_segments = cv2.HoughLinesP(cropped_edges, rho, angle, min_threshold, 
+                                        np.array([]), minLineLength=8, maxLineGap=4)
+
+        return line_segments
+    
+    def draw_line_segments(image, line_segments):
+        for line in line_segments:
+            x1, y1, x2, y2 = line[0]
+            image = cv2.line(image, (x1, y1), (x2, y2), (0, 255, 0), 2)  # Dibuja una línea verde de grosor 2
+        return image
+
+    segmentos = detect_line_segments(imagen_edges_gris)
+    imagen_edges_a_color = cv2.cvtColor(imagen_edges_gris, cv2.COLOR_GRAY2BGR)
+    imagen_edges_a_color = draw_line_segments(imagen_edges_a_color, segmentos)
+    print(imagen_edges_gris)
+
+    #frame_RGB = cv2.bitwise_and(cv_image,cv_image,mask = mask)
 
     #formas de sacar ruido
     kernel = np.ones((5, 5), np.uint8)
     #frame_RGB = cv2.morphologyEx(frame_RGB, cv2.MORPH_OPEN, kernel)
     frame_RGB = cv2.fastNlMeansDenoisingColored(frame_RGB,None,10,10,7,21)
+    
     
 
     #primeras 6 columnas columna
@@ -59,7 +87,6 @@ def read_image_data(data):
             pixel = frame_RGB[-1 - indice_fila][-1 - indice_columna]
             if(pixel[0] > 100 and pixel[1] > 100 and pixel[2] > 100):
                 primer_blanco_der = indice_fila
-                print(primer_blanco_der)
                 break
         
         #para salir del otro for
@@ -67,7 +94,6 @@ def read_image_data(data):
             break
 
     
-    print(frame_RGB.shape)
 
 
     k = 1/240
@@ -93,12 +119,13 @@ def read_image_data(data):
     print(twist)
 
     print(primer_blanco_izq, primer_blanco_der)
-   # cv2.imshow("Image window", frame_RGB)
-    #cv2.imshow("Video", cv_image)
-    #cv2.waitKey(3)
+    #cv2.imshow("Image window", frame_RGB)
+    cv2.imshow("Video", imagen_edges_a_color)
+    cv2.waitKey(3)
 
     try:
-        image_pub.publish(CvBridge().cv2_to_imgmsg(frame_RGB, "bgr8"))
+        #image_pub.publish(CvBridge().cv2_to_imgmsg(frame_RGB, "bgr8"))
+        image_pub.publish(CvBridge().cv2_to_imgmsg(cropped_edges, "bgr8"))
     except CvBridgeError as e:
         print(e) 
 
