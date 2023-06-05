@@ -8,6 +8,54 @@ from geometry_msgs.msg import Twist, Vector3
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
+there_is_interest_object = False
+distance_object = 0.10
+range_sensor = 10
+near_object_flag = False
+
+#chequea si al menos tiene 3 consecutivos entre 8 y 12 cm
+def near_object(distances, distance_min):
+    first_idx,second_idx,third_idx = -2000,-2000,-2000
+    for index in range(-1 *range_sensor,range_sensor + 1): #-10 a 10
+        if distances[index] != 0 and distances[index]>=(distance_min - 0.3) and distances[index]<=(distance_min +0.3):
+            if (first_idx +1) == index:
+                second_idx = index
+            elif (second_idx+1) == index:
+                third_idx = index
+            else:
+                first_idx = index
+    
+    #chequea si los valores fueron setados            
+    if first_idx >-11 and second_idx>-11 and third_idx > -11:
+        if second_idx == (first_idx +1) and third_idx == (second_idx+1):
+            #cumple que son 3 consecutivos
+            return True
+    
+    return False #cualquier otro caso
+                    
+
+def read_sensor(data):
+    global there_is_interest_object,distance_object
+    if there_is_interest_object:
+        if near_object(data.ranges,distance_object):
+            #stop
+            near_object_flag = True
+            vel_null = Twist(0,0,0)
+            motor_pub.publish(vel_null)
+            print(vel_null)
+        else:
+            #devolver control
+            near_object_flag = False
+
+def process_red_object(cv_image,frame_hsv,mask_red):
+    global there_is_interest_object
+    res = cv2.bitwise_and(cv_image,cv_image,mask = mask_red)
+    res2 = cv2.cvtColor(frame_hsv,cv2.COLOR_RGBGRAY)
+    circles = cv2.HoughCircles(res2,cv2.HOUGH_GRADIENT,1,20,param1=50,param2=30,minRadius = 10,maxRadius = 30)
+    
+    there_is_interest_object = not circles is None
+        
+
 
 def read_image_data(data):
     try:
@@ -21,9 +69,12 @@ def read_image_data(data):
     #rojo
     mask = cv2.inRange(frame_HSV, (0,10, 50), (30,255, 200))
     #buen rojo
-    mask = cv2.inRange(frame_HSV, (160, 131, 89), (189,255, 255))
+    mask_red = cv2.inRange(frame_HSV, (160, 131, 89), (189,255, 255))
     #blanco
     mask = cv2.inRange(frame_HSV, (0,0, 220), (30,30, 255))
+    
+    #detectar objetos rojos
+    process_red_object(cv_image,mask_red)
     
     edges = cv2.Canny(mask, 200, 400)
     #recortar parte de arriba imagen?
@@ -115,8 +166,10 @@ def read_image_data(data):
             
         twist.angular = Vector3(0, 0, vel_angular)
     
-    motor_pub.publish(twist)
-    print(twist)
+    #delega control
+    if not near_object_flag:
+        motor_pub.publish(twist)
+        print(twist)
 
     print(primer_blanco_izq, primer_blanco_der)
     #cv2.imshow("Image window", frame_RGB)
@@ -134,4 +187,5 @@ rospy.init_node('nodo')
 image_pub = rospy.Publisher("/mask",Image,queue_size=10)
 motor_pub = rospy.Publisher("dynamixel_workbench/cmd_vel", Twist, queue_size=20)
 rospy.Subscriber("/usb_cam/image_raw", Image, read_image_data)
+rospy.Subscriber("/scan",LaserScan,read_sensor)
 rospy.spin()
