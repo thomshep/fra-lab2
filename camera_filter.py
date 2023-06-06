@@ -67,6 +67,7 @@ def process_red_object(cv_image, frame_hsv, mask_red):
             redObjects.append(red_object)
 
     if redObjects != []:
+        ## nos podemos quedar con el objeto rojo mas grande
         pass 
 
     ### Fin ###
