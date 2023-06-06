@@ -15,5 +15,4 @@ image_msg = bridge.cv2_to_imgmsg(image, encoding="bgr8")
 
 while True:
     pub.publish(image_msg)
-
     rospy.sleep(2)

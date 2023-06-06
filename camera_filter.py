@@ -14,20 +14,20 @@ range_sensor = 10
 near_object_flag = False
 
 #chequea si al menos tiene 3 consecutivos entre 8 y 12 cm
-def near_object(distances, distance_min):
-    first_idx,second_idx,third_idx = -2000,-2000,-2000
-    for index in range(-1 *range_sensor,range_sensor + 1): #-10 a 10
-        if distances[index] != 0 and distances[index]>=(distance_min - 0.3) and distances[index]<=(distance_min +0.3):
-            if (first_idx +1) == index:
+def is_near_object(distances, distance_min):
+    first_idx, second_idx, third_idx = -2000, -2000, -2000
+    for index in range(-range_sensor, range_sensor + 1): # -10 grados a 10 grados
+        if distances[index] != 0 and abs(distances[index] - distance_min) <= 0.3:
+            if (first_idx + 1) == index:
                 second_idx = index
-            elif (second_idx+1) == index:
+            elif (second_idx + 1) == index:
                 third_idx = index
             else:
                 first_idx = index
     
     #chequea si los valores fueron setados            
-    if first_idx >-11 and second_idx>-11 and third_idx > -11:
-        if second_idx == (first_idx +1) and third_idx == (second_idx+1):
+    if first_idx > -11 and second_idx> -11 and third_idx > -11:
+        if second_idx == (first_idx + 1) and third_idx == (second_idx + 1):
             #cumple que son 3 consecutivos
             return True
     
@@ -35,9 +35,9 @@ def near_object(distances, distance_min):
                     
 
 def read_sensor(data):
-    global there_is_interest_object,distance_object
+    global there_is_interest_object, distance_object
     if there_is_interest_object:
-        if near_object(data.ranges,distance_object):
+        if is_near_object(data.ranges, distance_object):
             #stop
             near_object_flag = True
             vel_null = Twist(0,0,0)
@@ -47,11 +47,29 @@ def read_sensor(data):
             #devolver control
             near_object_flag = False
 
-def process_red_object(cv_image,frame_hsv,mask_red):
+def process_red_object(cv_image, frame_hsv, mask_red):
     global there_is_interest_object
-    res = cv2.bitwise_and(cv_image,cv_image,mask = mask_red)
-    res2 = cv2.cvtColor(frame_hsv,cv2.COLOR_RGBGRAY)
+    res = cv2.bitwise_and(cv_image, cv_image, mask = mask_red)
+    res2 = cv2.cvtColor(frame_hsv, cv2.COLOR_RGBGRAY)
     circles = cv2.HoughCircles(res2,cv2.HOUGH_GRADIENT,1,20,param1=50,param2=30,minRadius = 10,maxRadius = 30)
+
+    ### ALTERNATIVA a HoughCircles ###
+    contours, _ = cv2.findContours(res, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    THRESHOLD_SIZE = 0.3
+    redObjects = []
+    for contour in contours:
+        area = cv2.contourArea(contour)
+
+        if area > THRESHOLD_SIZE:
+            x, y, w, h = cv2.boundingRect(contour)
+            red_object = (contour, area, (x + (w / 2), y + (h / 2))) # (contour, area, centro)
+            redObjects.append(red_object)
+
+    if redObjects != []:
+        pass 
+
+    ### Fin ###
     
     there_is_interest_object = not circles is None
         
@@ -111,17 +129,14 @@ def read_image_data(data):
     #frame_RGB = cv2.morphologyEx(frame_RGB, cv2.MORPH_OPEN, kernel)
     frame_RGB = cv2.fastNlMeansDenoisingColored(frame_RGB,None,10,10,7,21)
     
-    
 
-    #primeras 6 columnas columna
+    #primeras 6 columnas
     primer_blanco_izq = -1
     for indice_fila, fila in enumerate(frame_RGB):
-        for indice_columna in range(0,6):
-        
         #revisar las 6 columnas adyacentes a la izquierda
-        
-            #hay color blanco
+        for indice_columna in range(0,6):
             pixel = frame_RGB[-1 - indice_fila][indice_columna]
+            #hay color blanco
             if(pixel[0] > 100 and pixel[1] > 100 and pixel[2] > 100):
                 primer_blanco_izq = indice_fila
                 break
@@ -144,8 +159,6 @@ def read_image_data(data):
         if primer_blanco_der > 0:
             break
 
-    
-
 
     k = 1/240
     vel_angular_max = 1.5
@@ -154,7 +167,6 @@ def read_image_data(data):
     twist.linear = Vector3(0.1,0,0)
 
     #para que no afecte el ruido (es una especie de histeresis)
-    
     if abs((primer_blanco_izq - primer_blanco_der)) > 1:
         #si hay mucha diferencia entre donde empieza el color blanco a la izquierda y a la derecha, hacer que robot gire con controlador proporcional el motor
         vel_angular = (primer_blanco_izq - primer_blanco_der) * k
@@ -187,5 +199,5 @@ rospy.init_node('nodo')
 image_pub = rospy.Publisher("/mask",Image,queue_size=10)
 motor_pub = rospy.Publisher("dynamixel_workbench/cmd_vel", Twist, queue_size=20)
 rospy.Subscriber("/usb_cam/image_raw", Image, read_image_data)
-rospy.Subscriber("/scan",LaserScan,read_sensor)
+rospy.Subscriber("/scan", LaserScan, read_sensor)
 rospy.spin()
