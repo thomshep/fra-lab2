@@ -72,8 +72,7 @@ def read_image_data(data):
                     #para salir del otro for
                     if cantidad_blancos > pixeles_a_evaluar_fila / 2:
                         esta_girando = True
-                        twist = Twist()
-                        motor_pub.publish(twist)
+                        
                         print(indice_fila)
                         print(frame_RGB.shape)
                     
