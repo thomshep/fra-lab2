@@ -9,17 +9,21 @@ import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
 import time
+import threading
+import random
 
 #constantes
 k = 1/240
 vel_angular_max = 1.5
 minima_diferencia_blancos = 1
-margen_superior = 50
+margen_superior = 100
 
 esta_girando = False
+recien_giro = False
 
 def girar(direccion):
-    global esta_girando
+    global esta_girando, recien_giro
+    esta_girando = True
 
     signo = 1
 
@@ -31,13 +35,23 @@ def girar(direccion):
     motor_pub.publish(twist)
 
     time.sleep(5.5)
+    recien_giro = True
+
+    def habilitar_giro():
+        global recien_giro
+        recien_giro = False
+
+    t = threading.Timer(5, habilitar_giro)
+    t.start()
 
     esta_girando = False
 
 def read_image_data(data):
     global esta_girando
 
-
+    if esta_girando or recien_giro:
+        return
+    
     try:
         cv_image = CvBridge().imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
@@ -68,6 +82,8 @@ def read_image_data(data):
         min_threshold = 30  # minimal of votes
         line_segments = cv2.HoughLinesP(cropped_edges, rho, angle, min_threshold, 
                                         np.array([]), minLineLength=15, maxLineGap=20)
+        if line_segments is None:
+            return []
 
         return line_segments
     
@@ -94,21 +110,7 @@ def read_image_data(data):
 
 
     segmentos_izquierda = list(filter(filtrado_segmentos_izquierda, segmentos))
-
     print(segmentos_izquierda)
-
-    for segmento in segmentos_izquierda:
-        x1, y1, x2, y2 = segmento[0]
-        pendiente = (y2 - y1) / (x2 - x1)
-        if abs(pendiente) < 0.1:
-            print("girar izq")
-            esta_girando = True
-            girar("izq")
-            return
-        
-
-        else:
-            print("linea vertical izq")
 
     def filtrado_segmentos_derecha(segmento):
         x1, y1, x2, y2 = segmento[0]
@@ -116,32 +118,64 @@ def read_image_data(data):
     
     segmentos_derecha = list(filter(filtrado_segmentos_derecha, segmentos))
 
-    for segmento in segmentos_derecha:
-        x1, y1, x2, y2 = segmento[0]
-        pendiente = (y2 - y1) / (x2 - x1)
-        if abs(pendiente) < 0.1:
-            print("girar der")
-            esta_girando = True
-            girar("der")
-            return
-        else:
-            print("linea vertical der")
 
+    
+
+    def evaluar_segmentos_izquierda(segmentos):
+        for segmento in segmentos:
+            x1, y1, x2, y2 = segmento[0]
+            if x2 == x1:
+                return
+            pendiente = (y2 - y1) / (x2 - x1)
+            if abs(pendiente) < 0.1:
+                print("girar izq")
+                girar("izq")
+                return
+            else:
+                print("No girar izq")
+
+    def evaluar_segmentos_derecha(segmentos):
+        for segmento in segmentos:
+            x1, y1, x2, y2 = segmento[0]
+            if x2 == x1:
+                return
+            pendiente = (y2 - y1) / (x2 - x1)
+            if abs(pendiente) < 0.1:
+                print("girar der")
+                girar("der")
+                return
+            else:
+                print("No girar der")
+
+    if random.random() > 0.5:
+        evaluar_segmentos_izquierda(segmentos_izquierda)
+        evaluar_segmentos_derecha(segmentos_derecha)
+    else: 
+        evaluar_segmentos_derecha(segmentos_derecha)
+        evaluar_segmentos_izquierda(segmentos_izquierda)
 
 
     twist = Twist()
     twist.linear = Vector3(0.1,0,0)
 
+    print("no girar")
 
 
+    
+    imagen_edges_a_color = cv2.cvtColor(imagen_edges_gris, cv2.COLOR_GRAY2BGR)
 
-
+    try:
+        #image_pub.publish(CvBridge().cv2_to_imgmsg(frame_RGB, "bgr8"))
+        image_pub.publish(CvBridge().cv2_to_imgmsg(imagen_edges_a_color, "bgr8"))
+    except CvBridgeError as e:
+        print(e) 
+    return
 
 
     # for line in segmentos:
     #         x1, y1, x2, y2 = line[0]
     print(len(segmentos))
-    imagen_edges_a_color = cv2.cvtColor(imagen_edges_gris, cv2.COLOR_GRAY2BGR)
+    
     
 
     imagen_edges_a_color = draw_line_segments(imagen_edges_a_color, segmentos)
@@ -160,11 +194,7 @@ def read_image_data(data):
     cv2.imshow("Video", imagen_edges_a_color)
     cv2.waitKey(3)
 
-    # try:
-    #     #image_pub.publish(CvBridge().cv2_to_imgmsg(frame_RGB, "bgr8"))
-    #     image_pub.publish(CvBridge().cv2_to_imgmsg(cropped_edges, "bgr8"))
-    # except CvBridgeError as e:
-    #     print(e) 
+    
 
 
 rospy.init_node('doblar')

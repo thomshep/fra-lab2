@@ -12,8 +12,6 @@ from cv_bridge import CvBridge, CvBridgeError
 distance_object = 0.15
 range_sensor = 10
 #variables
-there_is_interest_object = False
-near_object_flag = False
 cv_image_cam = None
 red_image = None
 
@@ -30,16 +28,14 @@ def is_near_object(distances, distance_min):
                     
 
 def read_sensor(data):
-    global there_is_interest_object, distance_object,red_image
+    global distance_object,red_image
     if is_near_object(data.ranges, distance_object) and process_red_object(red_image):
         #stop
-        near_object_flag = True
         vel_null = Twist(0,0,0)
         motor_pub.publish(vel_null)
         print(vel_null)
     else:
         #devolver control
-        near_object_flag = False
         twist = Twist()
         twist.linear = Vector3(0.1,0,0)
         motor_pub.publish(twist)
@@ -47,7 +43,6 @@ def read_sensor(data):
         
 
 def process_red_object(res):
-    global there_is_interest_object
     #res2 = cv2.cvtColor(frame_hsv, cv2.COLOR_RGBGRAY)
     #circles = cv2.HoughCircles(res2,cv2.HOUGH_GRADIENT,1,20,param1=50,param2=30,minRadius = 10,maxRadius = 30)
 
