@@ -23,6 +23,7 @@ recien_giro = False
 
 maximo_tamano_pendiente = 0.1
 maximo_largo_segmento = 50
+minimo_tamano_pendiente_vertical = 0.4
 
 def girar(direccion):
     global esta_girando, recien_giro
@@ -50,7 +51,7 @@ def girar(direccion):
     esta_girando = False
 
 def read_image_data(data):
-    global esta_girando
+    global esta_girando, minimo_tamano_pendiente_vertical
 
     if esta_girando or recien_giro:
         return
@@ -125,19 +126,33 @@ def read_image_data(data):
     segmentos_derecha = list(filter(filtrado_segmentos_derecha, segmentos))
 
 
+    def filtrado_segmentos_izquierda_verticales(segmento):
+        x1, y1, x2, y2 = segmento[0]
+        pendiente = (y2 - y1) / (x2 - x1)
+        return abs(pendiente) > minimo_tamano_pendiente_vertical and x1 <= 20 and y1 > margen_superior
+
+    segmentos_izquierda_verticales = list(filter(filtrado_segmentos_izquierda_verticales, segmentos))
+
+    def filtrado_segmentos_derecha_verticales(segmento):
+        x1, y1, x2, y2 = segmento[0]
+        pendiente = (y2 - y1) / (x2 - x1)
+        return abs(pendiente) > minimo_tamano_pendiente_vertical and x2 >= imagen_edges_gris.shape[1] - 20 and y1 > margen_superior
+
+    
+    segmentos_derecha_verticales = list(filter(filtrado_segmentos_derecha_verticales, segmentos))
     
 
-    def evaluar_segmentos(segmentos, dir_giro):
-        if len(segmentos) > 0:
+    def evaluar_segmentos(segmentos, dir_giro, segmentos_verticales):
+        if len(segmentos_verticales) == 0 and len(segmentos) > 0:
             print("giro " + dir_giro)
             girar(dir_giro)
 
     if random.random() > 0.5:
-        evaluar_segmentos(segmentos_izquierda, "izq")
-        evaluar_segmentos(segmentos_derecha, "der")
+        evaluar_segmentos(segmentos_izquierda, "izq", segmentos_izquierda_verticales)
+        evaluar_segmentos(segmentos_derecha, "der", segmentos_derecha_verticales)
     else: 
-        evaluar_segmentos(segmentos_derecha, "der")
-        evaluar_segmentos(segmentos_izquierda, "izq")
+        evaluar_segmentos(segmentos_derecha, "der", segmentos_derecha_verticales)
+        evaluar_segmentos(segmentos_izquierda, "izq", segmentos_izquierda_verticales)
 
 
     twist = Twist()
@@ -150,6 +165,9 @@ def read_image_data(data):
     imagen_edges_a_color = cv2.cvtColor(imagen_edges_gris, cv2.COLOR_GRAY2BGR)
     imagen_edges_a_color = draw_line_segments(imagen_edges_a_color, segmentos_izquierda)
     imagen_edges_a_color = draw_line_segments(imagen_edges_a_color, segmentos_derecha)
+
+    imagen_edges_a_color = draw_line_segments(imagen_edges_a_color, segmentos_derecha_verticales)
+    imagen_edges_a_color = draw_line_segments(imagen_edges_a_color, segmentos_izquierda_verticales)
 
     cv2.imshow("Video", imagen_edges_a_color)
     cv2.waitKey(3)
