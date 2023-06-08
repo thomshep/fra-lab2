@@ -14,12 +14,15 @@ import random
 
 #constantes
 k = 1/240
-vel_angular_max = 1.5
+vel_angular_max = 1
 minima_diferencia_blancos = 1
-margen_superior = 100
+margen_superior = 200
 
 esta_girando = False
 recien_giro = False
+
+maximo_tamano_pendiente = 0.1
+maximo_largo_segmento = 50
 
 def girar(direccion):
     global esta_girando, recien_giro
@@ -34,15 +37,15 @@ def girar(direccion):
     twist.angular = Vector3(0,0, signo * 1)
     motor_pub.publish(twist)
 
-    time.sleep(5.5)
-    recien_giro = True
+    # time.sleep(5.5)
+    # recien_giro = True
 
-    def habilitar_giro():
-        global recien_giro
-        recien_giro = False
+    # def habilitar_giro():
+    #     global recien_giro
+    #     recien_giro = False
 
-    t = threading.Timer(5, habilitar_giro)
-    t.start()
+    # t = threading.Timer(5, habilitar_giro)
+    # t.start()
 
     esta_girando = False
 
@@ -105,7 +108,8 @@ def read_image_data(data):
     print(imagen_edges_gris.shape)
     def filtrado_segmentos_izquierda(segmento):
         x1, y1, x2, y2 = segmento[0]
-        return x1 <= 20 and y1 > margen_superior
+        pendiente = (y2 - y1) / (x2 - x1)
+        return abs(pendiente) < maximo_tamano_pendiente and x1 <= 20 and x2 - x1 < maximo_largo_segmento and y1 > margen_superior
     print("len(segmentos)")
 
 
@@ -114,62 +118,52 @@ def read_image_data(data):
 
     def filtrado_segmentos_derecha(segmento):
         x1, y1, x2, y2 = segmento[0]
-        return x2 >= imagen_edges_gris.shape[1] - 20 and y1 > margen_superior
+        pendiente = (y2 - y1) / (x2 - x1)
+        return abs(pendiente) < maximo_tamano_pendiente and x2 >= imagen_edges_gris.shape[1] - 20 and x2 - x1 < maximo_largo_segmento and y1 > margen_superior
+
     
     segmentos_derecha = list(filter(filtrado_segmentos_derecha, segmentos))
 
 
     
 
-    def evaluar_segmentos_izquierda(segmentos):
-        for segmento in segmentos:
-            x1, y1, x2, y2 = segmento[0]
-            if x2 == x1:
-                return
-            pendiente = (y2 - y1) / (x2 - x1)
-            if abs(pendiente) < 0.1:
-                print("girar izq")
-                girar("izq")
-                return
-            else:
-                print("No girar izq")
-
-    def evaluar_segmentos_derecha(segmentos):
-        for segmento in segmentos:
-            x1, y1, x2, y2 = segmento[0]
-            if x2 == x1:
-                return
-            pendiente = (y2 - y1) / (x2 - x1)
-            if abs(pendiente) < 0.1:
-                print("girar der")
-                girar("der")
-                return
-            else:
-                print("No girar der")
+    def evaluar_segmentos(segmentos, dir_giro):
+        if len(segmentos) > 0:
+            print("giro " + dir_giro)
+            girar(dir_giro)
 
     if random.random() > 0.5:
-        evaluar_segmentos_izquierda(segmentos_izquierda)
-        evaluar_segmentos_derecha(segmentos_derecha)
+        evaluar_segmentos(segmentos_izquierda, "izq")
+        evaluar_segmentos(segmentos_derecha, "der")
     else: 
-        evaluar_segmentos_derecha(segmentos_derecha)
-        evaluar_segmentos_izquierda(segmentos_izquierda)
+        evaluar_segmentos(segmentos_derecha, "der")
+        evaluar_segmentos(segmentos_izquierda, "izq")
 
 
     twist = Twist()
     twist.linear = Vector3(0.1,0,0)
 
-    print("no girar")
+    print("avanzar")
 
 
     
     imagen_edges_a_color = cv2.cvtColor(imagen_edges_gris, cv2.COLOR_GRAY2BGR)
+    imagen_edges_a_color = draw_line_segments(imagen_edges_a_color, segmentos_izquierda)
+    imagen_edges_a_color = draw_line_segments(imagen_edges_a_color, segmentos_derecha)
+
+    cv2.imshow("Video", imagen_edges_a_color)
+    cv2.waitKey(3)
+
+    return
+
+
 
     try:
         #image_pub.publish(CvBridge().cv2_to_imgmsg(frame_RGB, "bgr8"))
         image_pub.publish(CvBridge().cv2_to_imgmsg(imagen_edges_a_color, "bgr8"))
     except CvBridgeError as e:
         print(e) 
-    return
+    
 
 
     # for line in segmentos:
