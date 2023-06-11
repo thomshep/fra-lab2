@@ -16,7 +16,7 @@ minima_diferencia_blancos = 1
 maximo_largo_segmento = 50
 minimo_tamano_pendiente = 0.4
 margen_superior = 100
-k_vel_giro = 1
+k_vel_giro = -1/7
 minima_dif_promedios = 0.01
 
 def read_image_data(data):
@@ -48,7 +48,7 @@ def read_image_data(data):
     #formas de sacar ruido
     kernel = np.ones((5, 5), np.uint8)
     #frame_RGB = cv2.morphologyEx(frame_RGB, cv2.MORPH_OPEN, kernel)
-    frame_RGB = cv2.fastNlMeansDenoisingColored(frame_RGB,None,10,10,7,21)
+    #frame_RGB = cv2.fastNlMeansDenoisingColored(frame_RGB,None,10,10,7,21)
     
 
     ## USANDO COLOR BLANCO (form vieja)
@@ -175,7 +175,7 @@ def read_image_data(data):
 
 
     twist = Twist()
-    twist.linear = Vector3(0.1,0,0)
+    twist.linear = Vector3(0.07,0,0)
 
     velocidad_giro = 0
     if abs(promedio_seg_izq - promedio_seg_der) > minima_dif_promedios:
