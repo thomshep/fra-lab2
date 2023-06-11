@@ -16,7 +16,7 @@ pixeles_a_evaluar_fila = 8
 altura_maxima_pared = 500
 
 minimo_largo_segmento = 100
-margen_superior = 250
+margen_superior = 360
 maximo_tamano_pendiente = 0.1
 
 # def girar():
@@ -34,7 +34,7 @@ def read_image_data(data):
     global esta_girando, margen_superior, minimo_largo_segmento, maximo_tamano_pendiente
     
     if not esta_girando:
-        print("entre")
+
         try:
             cv_image = CvBridge().imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
@@ -49,13 +49,13 @@ def read_image_data(data):
         #formas de sacar ruido
         kernel = np.ones((5, 5), np.uint8)
         #frame_RGB = cv2.morphologyEx(frame_RGB, cv2.MORPH_OPEN, kernel)
-        frame_RGB = cv2.fastNlMeansDenoisingColored(frame_RGB,None,10,10,7,21)
+        #frame_RGB = cv2.fastNlMeansDenoisingColored(frame_RGB,None,10,10,7,21)
         
-        print("eee")
+
         #cv2.imshow("Image window", frame_RGB)
         #cv2.waitKey(40)
 
-        print("kkkk")
+
 
         # ####### USANDO PUNTOS BLANCOS
         
@@ -118,7 +118,7 @@ def read_image_data(data):
         def draw_line_segments(image, line_segments):
             for line in line_segments:
                 x1, y1, x2, y2 = line[0]
-                print("draw line")
+
                 image = cv2.line(image, (x1, y1), (x2, y2), (0, 255, 0), 2)  # Dibuja una línea verde de grosor 2
             return image
 
@@ -130,24 +130,30 @@ def read_image_data(data):
 
             return abs(pendiente) < maximo_tamano_pendiente and y1 > margen_superior and x2 - x1 > minimo_largo_segmento
         
-        print("len(segmentos)")
+        #print("len(segmentos)")
         segmentos = list(filter(filtrado_segmentos, segmentos))
+        #segmentos = []
 
         twist = Twist()
 
         if len(segmentos) > 0: #frenar
             print("frenar")
             print(segmentos)
-            motor_pub.publish(twist)
+
         else:
             #Avanzar
             print("avanzar")
-            twist.linear = Vector3(0.1,0,0)
-            motor_pub.publish(twist)
+            twist.linear = Vector3(0.07,0,0)
+        motor_pub.publish(twist)
 
 
         imagen_edges_a_color = cv2.cvtColor(imagen_edges_gris, cv2.COLOR_GRAY2BGR)
         imagen_edges_a_color = draw_line_segments(imagen_edges_a_color, segmentos)
+        try:
+            #image_pub.publish(CvBridge().cv2_to_imgmsg(frame_RGB, "bgr8"))
+            image_pub.publish(CvBridge().cv2_to_imgmsg(imagen_edges_a_color, "bgr8"))
+        except CvBridgeError as e:
+            print(e) 
         cv2.imshow("Video", imagen_edges_a_color)
         cv2.waitKey(3)
 
@@ -156,5 +162,5 @@ def read_image_data(data):
 rospy.init_node('nodo')
 image_pub = rospy.Publisher("/mask",Image,queue_size=10)
 motor_pub = rospy.Publisher("dynamixel_workbench/cmd_vel", Twist, queue_size=20)
-rospy.Subscriber("/usb_cam/image_raw", Image, read_image_data)
+rospy.Subscriber("/usb_cam/image_raw", Image, read_image_data, queue_size=1)
 rospy.spin()
