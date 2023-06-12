@@ -16,7 +16,7 @@ import random
 k = 1/240
 vel_angular_max = 1
 minima_diferencia_blancos = 1
-margen_superior = 200
+margen_superior = 70
 
 esta_girando = False
 recien_giro = False
@@ -24,10 +24,18 @@ recien_giro = False
 maximo_tamano_pendiente = 0.1
 maximo_largo_segmento = 50
 minimo_tamano_pendiente_vertical = 0.4
+tiempo_empezar_girar = 0 #5
+tiempo_girando = 6 #6
+diferencia_maxima_segmentos = 10
+
+contador = 0
+
+# 0 es evalua a donde girar, 1 es ya decidio a donde girar y esta esperando a llegar, 2 es esta girando
+estado = 0
 
 def girar(direccion):
-    global esta_girando, recien_giro
-    esta_girando = True
+    global tiempo_girando
+
 
     signo = 1
 
@@ -38,22 +46,22 @@ def girar(direccion):
     twist.angular = Vector3(0,0, signo * 1)
     motor_pub.publish(twist)
 
-    # time.sleep(5.5)
-    # recien_giro = True
 
-    # def habilitar_giro():
-    #     global recien_giro
-    #     recien_giro = False
 
-    # t = threading.Timer(5, habilitar_giro)
-    # t.start()
+    def habilitar_giro():
+       global estado
+       print("deje de girar")
+       estado = 0
 
-    esta_girando = False
+    t = threading.Timer(tiempo_girando, habilitar_giro)
+    t.start()
+
+
 
 def read_image_data(data):
     global esta_girando, minimo_tamano_pendiente_vertical
 
-    if esta_girando or recien_giro:
+    if estado != 0:
         return
     
     try:
@@ -79,8 +87,13 @@ def read_image_data(data):
 
     frame_RGB = cropped_edges
 
+    # kernel = np.ones((5, 5), np.uint8)
+    # frame_RGB = cv2.morphologyEx(frame_RGB, cv2.MORPH_OPEN, kernel)
+
+    
+
     def detect_line_segments(cropped_edges):
-        # tuning min_threshold, minLineLength, maxLineGap is a trial and error process by hand
+        # tunevaluar_segmentosing min_threshold, minLineLength, maxLineGap is a trial and error process by hand
         rho = 1  # distance precision in pixel, i.e. 1 pixel
         angle = np.pi / 180  # angular precision in radian, i.e. 1 degree
         min_threshold = 30  # minimal of votes
@@ -106,46 +119,79 @@ def read_image_data(data):
     segmentos = detect_line_segments(imagen_edges_gris)
 
 
-    print(imagen_edges_gris.shape)
-    def filtrado_segmentos_izquierda(segmento):
+    #print(imagen_edges_gris.shape)
+    def filtrado_segmentos_izquierda_horizontales(segmento):
         x1, y1, x2, y2 = segmento[0]
         pendiente = (y2 - y1) / (x2 - x1)
         return abs(pendiente) < maximo_tamano_pendiente and x1 <= 20 and x2 - x1 < maximo_largo_segmento and y1 > margen_superior
-    print("len(segmentos)")
+    #print("len(segmentos)")
 
 
-    segmentos_izquierda = list(filter(filtrado_segmentos_izquierda, segmentos))
-    print(segmentos_izquierda)
+    segmentos_izquierda = list(filter(filtrado_segmentos_izquierda_horizontales, segmentos))
+    #print(segmentos_izquierda)
 
-    def filtrado_segmentos_derecha(segmento):
+    def filtrado_segmentos_derecha_horizontales(segmento):
         x1, y1, x2, y2 = segmento[0]
         pendiente = (y2 - y1) / (x2 - x1)
         return abs(pendiente) < maximo_tamano_pendiente and x2 >= imagen_edges_gris.shape[1] - 20 and x2 - x1 < maximo_largo_segmento and y1 > margen_superior
 
     
-    segmentos_derecha = list(filter(filtrado_segmentos_derecha, segmentos))
+    segmentos_derecha = list(filter(filtrado_segmentos_derecha_horizontales, segmentos))
 
 
     def filtrado_segmentos_izquierda_verticales(segmento):
         x1, y1, x2, y2 = segmento[0]
         pendiente = (y2 - y1) / (x2 - x1)
-        return abs(pendiente) > minimo_tamano_pendiente_vertical and x1 <= 20 and y1 > margen_superior
+        return abs(pendiente) > minimo_tamano_pendiente_vertical and x1 >= 20 and x1 <= 60 and y1 > margen_superior
 
     segmentos_izquierda_verticales = list(filter(filtrado_segmentos_izquierda_verticales, segmentos))
-
+    if len(segmentos_izquierda_verticales) > 0:
+        segmentos_izquierda_verticales = [max(segmentos_izquierda_verticales, key=lambda x: x[0][1])]
+    
     def filtrado_segmentos_derecha_verticales(segmento):
         x1, y1, x2, y2 = segmento[0]
         pendiente = (y2 - y1) / (x2 - x1)
-        return abs(pendiente) > minimo_tamano_pendiente_vertical and x2 >= imagen_edges_gris.shape[1] - 20 and y1 > margen_superior
+        return abs(pendiente) > minimo_tamano_pendiente_vertical and x2 <= imagen_edges_gris.shape[1] - 20 and x2 >= imagen_edges_gris.shape[1] - 60 and y1 > margen_superior
 
-    
     segmentos_derecha_verticales = list(filter(filtrado_segmentos_derecha_verticales, segmentos))
-    
+    if len(segmentos_derecha_verticales) > 0:
+        segmentos_derecha_verticales = [max(segmentos_derecha_verticales, key=lambda x: x[0][1])]
 
     def evaluar_segmentos(segmentos, dir_giro, segmentos_verticales):
-        if len(segmentos_verticales) == 0 and len(segmentos) > 0:
-            print("giro " + dir_giro)
-            girar(dir_giro)
+        global estado, tiempo_empezar_girar, contador
+        if len(segmentos_verticales) > 0 and len(segmentos) > 0:
+            segmento_vertical = segmentos_verticales[0]
+
+            def coincide_extremo_segmento_vertical_con_horizontal(segmento):
+                global diferencia_maxima_segmentos
+                x1_h, y1_h, x2_h, y2_h = segmento[0]
+                x1_v, y1_v, x2_v, y2_v = segmento_vertical[0]
+                #print("horiz primero")
+                #print(segmento[0])
+                #print(segmento_vertical[0])
+                if dir_giro == "der":
+                    return abs(y1_h - y2_v) <= diferencia_maxima_segmentos
+                else:
+                    return abs(y1_v - y2_h) <= diferencia_maxima_segmentos 
+
+
+
+            coincidencias_segmentos = list(filter(coincide_extremo_segmento_vertical_con_horizontal, segmentos))
+
+            if len(coincidencias_segmentos) > 0:
+                contador += 1
+                print(contador)
+                print("giro " + dir_giro)
+                estado = 1
+                print("espero para girar")
+                def empezar_girar():
+                    estado = 2
+                    print("empece a girar")
+                    girar(dir_giro)
+                    
+                t = threading.Timer(tiempo_empezar_girar, empezar_girar)
+                t.start()
+
 
     if random.random() > 0.5:
         evaluar_segmentos(segmentos_izquierda, "izq", segmentos_izquierda_verticales)
@@ -158,7 +204,9 @@ def read_image_data(data):
     twist = Twist()
     twist.linear = Vector3(0.1,0,0)
 
-    print("avanzar")
+    if estado != 2:
+      #print("avanzar")
+      motor_pub.publish(twist)
 
 
     
@@ -172,7 +220,7 @@ def read_image_data(data):
     cv2.imshow("Video", imagen_edges_a_color)
     cv2.waitKey(3)
 
-    return
+    
 
 
 
@@ -181,7 +229,7 @@ def read_image_data(data):
         image_pub.publish(CvBridge().cv2_to_imgmsg(imagen_edges_a_color, "bgr8"))
     except CvBridgeError as e:
         print(e) 
-    
+    return
 
 
     # for line in segmentos:
@@ -201,7 +249,11 @@ def read_image_data(data):
     frame_RGB = cv2.fastNlMeansDenoisingColored(frame_RGB,None,10,10,7,21)
     
     
-
+    try:
+        #image_pub.publish(CvBridge().cv2_to_imgmsg(frame_RGB, "bgr8"))
+        image_pub.publish(CvBridge().cv2_to_imgmsg(cropped_edges, "bgr8"))
+    except CvBridgeError as e:
+        print(e) 
 
     cv2.imshow("Video", imagen_edges_a_color)
     cv2.waitKey(3)
