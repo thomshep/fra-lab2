@@ -4,6 +4,7 @@ from sensor_msgs.msg import LaserScan
 import numpy as np
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist, Vector3
+from std_msgs.msg import Bool
 
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
@@ -139,11 +140,14 @@ def read_image_data(data):
         if len(segmentos) > 0: #frenar
             print("frenar")
             print(segmentos)
+            wall_pub.publish(True)
 
         else:
             #Avanzar
             print("avanzar")
             twist.linear = Vector3(0.07,0,0)
+            wall_pub.publish(False)
+
         motor_pub.publish(twist)
 
 
@@ -159,8 +163,10 @@ def read_image_data(data):
 
         
 
-rospy.init_node('nodo')
+rospy.init_node('detector_pared')
 image_pub = rospy.Publisher("/mask",Image,queue_size=10)
-motor_pub = rospy.Publisher("dynamixel_workbench/cmd_vel", Twist, queue_size=20)
+#motor_pub = rospy.Publisher("dynamixel_workbench/cmd_vel", Twist, queue_size=20)
+motor_pub = rospy.Publisher("dscsd/cmd_vel", Twist, queue_size=20)
+wall_pub = rospy.Publisher("controlador_reactivo/hay_pared", Bool, queue_size=10)
 rospy.Subscriber("/usb_cam/image_raw", Image, read_image_data, queue_size=1)
 rospy.spin()

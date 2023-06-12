@@ -4,6 +4,7 @@ from sensor_msgs.msg import LaserScan
 import numpy as np
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist, Vector3
+from std_msgs.msg import String
 
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
@@ -24,8 +25,8 @@ recien_giro = False
 maximo_tamano_pendiente = 0.1
 maximo_largo_segmento = 50
 minimo_tamano_pendiente_vertical = 0.4
-tiempo_empezar_girar = 0 #5
-tiempo_girando = 6 #6
+tiempo_empezar_girar = 2.5 #5
+tiempo_girando = 5.5 #6
 diferencia_maxima_segmentos = 10
 
 contador = 0
@@ -162,6 +163,7 @@ def read_image_data(data):
         if len(segmentos_verticales) > 0 and len(segmentos) > 0:
             segmento_vertical = segmentos_verticales[0]
 
+            ##TODO: hacer de 0 a 60 el filtrado de verticales y mirar que coincidan en los x tambien
             def coincide_extremo_segmento_vertical_con_horizontal(segmento):
                 global diferencia_maxima_segmentos
                 x1_h, y1_h, x2_h, y2_h = segmento[0]
@@ -179,18 +181,27 @@ def read_image_data(data):
             coincidencias_segmentos = list(filter(coincide_extremo_segmento_vertical_con_horizontal, segmentos))
 
             if len(coincidencias_segmentos) > 0:
+                doblar_pub.publish(dir_giro)
+                
                 contador += 1
                 print(contador)
                 print("giro " + dir_giro)
                 estado = 1
                 print("espero para girar")
+
                 def empezar_girar():
+                    global estado
                     estado = 2
                     print("empece a girar")
                     girar(dir_giro)
                     
+                    
                 t = threading.Timer(tiempo_empezar_girar, empezar_girar)
                 t.start()
+
+                return
+        
+        doblar_pub.publish("no")
 
 
     if random.random() > 0.5:
@@ -263,6 +274,9 @@ def read_image_data(data):
 
 rospy.init_node('doblar')
 image_pub = rospy.Publisher("/mask",Image,queue_size=10)
-motor_pub = rospy.Publisher("dynamixel_workbench/cmd_vel", Twist, queue_size=20)
+#motor_pub = rospy.Publisher("dynamixel_workbench/cmd_vel", Twist, queue_size=20)
+motor_pub = rospy.Publisher("sss/cmd_vel", Twist, queue_size=20)
+doblar_pub = rospy.Publisher("controlador_reactivo/doblar", String, queue_size=10)
+
 rospy.Subscriber("/usb_cam/image_raw", Image, read_image_data)
 rospy.spin()

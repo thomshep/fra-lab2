@@ -213,8 +213,9 @@ def read_image_data(data):
         print(e) 
 
 
-rospy.init_node('nodo')
+rospy.init_node('seguidor_lineas')
 image_pub = rospy.Publisher("/mask",Image,queue_size=10)
-motor_pub = rospy.Publisher("dynamixel_workbench/cmd_vel", Twist, queue_size=20)
+#motor_pub = rospy.Publisher("dynamixel_workbench/cmd_vel", Twist, queue_size=20)
+motor_pub = rospy.Publisher("controlador_reactivo/cmd_vel", Twist, queue_size=20)
 rospy.Subscriber("/usb_cam/image_raw", Image, read_image_data)
 rospy.spin()
