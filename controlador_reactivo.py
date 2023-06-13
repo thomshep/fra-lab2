@@ -27,10 +27,11 @@ def datos_hay_pared(hay_pared):
     if estado != AVANZAR:
         return
 
-    if hay_pared:
+    if hay_pared == True:
         estado = PARED
         #FRENAR
 
+        print("freno, hay pared")
         twist = Twist()
         motor_pub.publish(twist)
 
@@ -41,6 +42,7 @@ def datos_hay_pared(hay_pared):
             signo = -1
 
         twist = Twist()
+
         twist.angular = Vector3(0,0, signo * 1)
         motor_pub.publish(twist)
 
@@ -49,8 +51,10 @@ def datos_hay_pared(hay_pared):
             global estado
             estado = AVANZAR
 
+            print("termino girar despues de pared")
             twist = Twist()
             twist.angular = Vector3(0,0,0)
+            
             motor_pub.publish(twist)
 
         t = threading.Timer(TIEMPO_GIRANDO, termino_girar)
@@ -62,10 +66,13 @@ def datos_seguidor_lineas(velocidades):
     global estado
 
     if estado == AVANZAR:
+        print("avanzo como me dice seguidor")
+
         motor_pub.publish(velocidades)
 
 
 def datos_doblar(doblar):
+    global estado
     if estado != AVANZAR:
         return
     
@@ -84,11 +91,14 @@ def datos_doblar(doblar):
 
         twist = Twist()
         twist.angular = Vector3(0,0, signo * 1)
+        print("giro")
+
         motor_pub.publish(twist)
 
         def habilitar_giro():
             global estado
             estado = AVANZAR
+            print("termine girar")
             twist = Twist()
             motor_pub.publish(twist)
 
