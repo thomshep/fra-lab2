@@ -62,8 +62,8 @@ def girar(direccion):
 def read_image_data(data):
     global esta_girando, minimo_tamano_pendiente_vertical
 
-    if estado != 0:
-        return
+    # if estado != 0:
+    #     return
     
     try:
         cv_image = CvBridge().imgmsg_to_cv2(data, "bgr8")

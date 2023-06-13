@@ -8,6 +8,8 @@ import threading
 #Constantes:
 TIEMPO_GIRANDO = 5.5
 TIEMPO_EMPEZAR_GIRAR = 4
+TIEMPO_ESPERA_DETECCIONES_GIRAR = 1
+DETECCIONES_NECESARIAS_GIRAR = 3
 
 ##ESTADOS:
 # AVANZAR
@@ -20,12 +22,17 @@ PARED = 2
 
 
 estado = AVANZAR
+cantidad_girar_izq_detectados = 0
+cantidad_girar_der_detectados = 0
+
 
 def datos_hay_pared(hay_pared):
     global estado, TIEMPO_GIRANDO
 
     if estado != AVANZAR:
         return
+
+    hay_pared = hay_pared.data
 
     if hay_pared == True:
         estado = PARED
@@ -72,14 +79,19 @@ def datos_seguidor_lineas(velocidades):
 
 
 def datos_doblar(doblar):
-    global estado
+    global estado, cantidad_girar_der_detectados, cantidad_girar_izq_detectados
+
     if estado != AVANZAR:
         return
+
+    doblar = doblar.data
     
     if doblar == "no":
         return
+    
+    print(doblar)
 
-     
+
     def girar():
         global TIEMPO_GIRANDO, estado
         estado = GIRANDO
@@ -105,9 +117,32 @@ def datos_doblar(doblar):
         t = threading.Timer(TIEMPO_GIRANDO, habilitar_giro)
         t.start()
 
-                    
-    t = threading.Timer(TIEMPO_EMPEZAR_GIRAR, girar)
-    t.start()
+    
+    if doblar == "der":
+        print("acumulo der")
+        cantidad_girar_der_detectados += 1
+        if cantidad_girar_der_detectados == 1: #es el primer detectado, doy tiempo maximo para que lleguen otras detecciones
+            def reiniciar_contador_der():
+                global cantidad_girar_der_detectados
+                cantidad_girar_der_detectados = 0
+                print("reinicio der")
+            timer = threading.Timer(TIEMPO_ESPERA_DETECCIONES_GIRAR, reiniciar_contador_der)
+            timer.start()
+
+    else:
+        cantidad_girar_izq_detectados += 1
+        print("acumulo izq")
+        if cantidad_girar_izq_detectados == 1: #es el primer detectado, doy tiempo maximo para que lleguen otras detecciones
+            def reiniciar_contador_izq():
+                global cantidad_girar_izq_detectados
+                cantidad_girar_izq_detectados = 0
+                print("reinicio izq")
+            timer = threading.Timer(TIEMPO_ESPERA_DETECCIONES_GIRAR, reiniciar_contador_izq)
+            timer.start()
+
+    if cantidad_girar_der_detectados == DETECCIONES_NECESARIAS_GIRAR or cantidad_girar_izq_detectados == DETECCIONES_NECESARIAS_GIRAR:             
+        t = threading.Timer(TIEMPO_EMPEZAR_GIRAR, girar)
+        t.start()
 
 
 rospy.init_node('controlador_reactivo')
