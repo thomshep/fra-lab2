@@ -44,14 +44,18 @@ def datos_hay_pared(hay_pared):
 
         #se elige direccion de giro aleatoriamente
         signo = 1
+        doblar = "izq"
 
         if random.random() > 0.5:
             signo = -1
+            doblar = "der"
 
         twist = Twist()
 
         twist.angular = Vector3(0,0, signo * 1)
         motor_pub.publish(twist)
+
+        giro_pub.publish(doblar)
 
         #se espera cierto tiempo mientras gira, durante el cual no se reacciona a los datos sensados
         def termino_girar():
@@ -89,7 +93,7 @@ def datos_doblar(doblar):
     if doblar == "no":
         return
     
-    print(doblar)
+    giro_pub.publish(doblar)
 
 
     def girar():
@@ -152,6 +156,7 @@ rospy.Subscriber("/controlador_reactivo/doblar", String, datos_doblar)
 rospy.Subscriber("/controlador_reactivo/cmd_vel", Twist, datos_seguidor_lineas)
 rospy.Subscriber("/controlador_reactivo/hay_pared", Bool, datos_hay_pared)
 motor_pub = rospy.Publisher("dynamixel_workbench/cmd_vel", Twist, queue_size=20)
+giro_pub = rospy.Publisher("/navegacion/giro", String, queue_size=20)
 
 
 rospy.spin()
