@@ -9,31 +9,35 @@ import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
 #constant
-distance_object = 0.15
-range_sensor = 10
+MAX_DISTANCE_OBJECT = 0.15
+ANGLES_LIDAR_INSPECTED = 10
+MAX_DISTANCE_DIFFERENCE = 0.03
 #variables
 cv_image_cam = None
 red_image = None
+analizar_imagen = False
 
 #chequea si al menos tiene 3 consecutivos entre 8 y 12 cm
-def is_near_object(distances, distance_min):
+def is_near_object(distances):
     
-    for index in range(-range_sensor + 1, range_sensor): # -10 grados a 10 grados
-        if distances[index-1] > 0 and abs(distances[index-1] - distance_min) <= 0.03 \
-            and distances[index] >0 and abs(distances[index] - distance_min) <= 0.03 \
-            and distances[index + 1]>0 and abs(distances[index+1] - distance_min) <= 0.03:
+    for index in range(-ANGLES_LIDAR_INSPECTED + 1, ANGLES_LIDAR_INSPECTED): # -10 grados a 10 grados
+        if distances[index-1] > 0 and abs(distances[index-1] - MAX_DISTANCE_OBJECT) <= MAX_DISTANCE_DIFFERENCE \
+            and distances[index] >0 and abs(distances[index] - MAX_DISTANCE_OBJECT) <= MAX_DISTANCE_DIFFERENCE \
+            and distances[index + 1] > 0 and abs(distances[index+1] - MAX_DISTANCE_OBJECT) <= MAX_DISTANCE_DIFFERENCE:
             return True
     
     return False #cualquier otro caso
                     
 
 def read_sensor(data):
-    global distance_object,red_image
-    if is_near_object(data.ranges, distance_object) and process_red_object(red_image):
+    global analizar_imagen
+    if is_near_object(data.ranges):
         #stop
         vel_null = Twist(0,0,0)
         motor_pub.publish(vel_null)
         print(vel_null)
+
+        analizar_imagen = True
     else:
         #devolver control
         twist = Twist()
@@ -42,7 +46,7 @@ def read_sensor(data):
 
         
 
-def process_red_object(res):
+def process_object(res):
     #res2 = cv2.cvtColor(frame_hsv, cv2.COLOR_RGBGRAY)
     #circles = cv2.HoughCircles(res2,cv2.HOUGH_GRADIENT,1,20,param1=50,param2=30,minRadius = 10,maxRadius = 30)
 
@@ -73,7 +77,12 @@ def process_red_object(res):
         
 
 def read_image_data(data):
-    global cv_image_cam,red_image
+    global cv_image_cam,red_image, analizar_imagen
+
+    if not analizar_imagen:
+        return
+    
+
     try:
         cv_image_cam = CvBridge().imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
@@ -84,6 +93,21 @@ def read_image_data(data):
     mask_red = cv2.inRange(frame_HSV, (160, 131, 89), (189,255, 255))
     
     red_image = cv2.bitwise_and(cv_image_cam, cv_image_cam, mask = mask_red)
+
+    #TODO: definir
+    mask_yellow = cv2.inRange(frame_HSV, (0, 0, 0), (0,0, 0))
+    yellow_image = cv2.bitwise_and(cv_image_cam, cv_image_cam, mask = mask_yellow)
+
+    if process_object(red_image):
+        twist = Twist()
+        twist.angular = Vector3(0,0, 1)
+        motor_pub.publish(twist)
+
+    if process_object(yellow_image):
+        twist = Twist()
+        twist.angular = Vector3(0,0, -1)
+        motor_pub.publish(twist)
+
 
 rospy.init_node('nodo_red')
 image_pub = rospy.Publisher("/mask",Image,queue_size=10)
