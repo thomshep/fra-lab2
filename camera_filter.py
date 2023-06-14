@@ -200,8 +200,8 @@ def read_image_data(data):
     imagen_edges_a_color = draw_line_segments(imagen_edges_a_color, segmentos_derecha)
 
 
-    cv2.imshow("Video", imagen_edges_a_color)
-    cv2.waitKey(3)
+    #cv2.imshow("Video", imagen_edges_a_color)
+    #cv2.waitKey(3)
 
     return
 

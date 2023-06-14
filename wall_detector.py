@@ -158,8 +158,8 @@ def read_image_data(data):
             image_pub.publish(CvBridge().cv2_to_imgmsg(imagen_edges_a_color, "bgr8"))
         except CvBridgeError as e:
             print(e) 
-        cv2.imshow("Video", imagen_edges_a_color)
-        cv2.waitKey(3)
+        #cv2.imshow("Video", imagen_edges_a_color)
+       # cv2.waitKey(3)
 
         
 

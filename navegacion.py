@@ -12,6 +12,7 @@ class Nodo:
     def agregar_arista(self, arista):
         self.aristas.append(arista)
 
+
 class Arista:
     def __init__(self, nodo_origen, nodo_destino, distancia, orientacion):
         self.nodo_origen = nodo_origen
@@ -30,30 +31,43 @@ nodo_inicial = Nodo(grafo, (0,0), [])
 ultimo_nodo_visitado = nodo_inicial
 grafo.append(ultimo_nodo_visitado)
 
-orientacion_actual = "N"
+orientacion_actual = "E"
 
 posicion_actual_robot = (0,0)
+ultima_posicion_robot = (0,0)
+
 
 def giro(data):
     global orientacion_actual, orientaciones, grafo, posicion_actual_robot, ultimo_nodo_visitado
 
     indice_orientacion_actual = orientaciones.index(orientacion_actual)
 
+    posicion_nodo = (0,0)
+    if orientacion_actual == "N" or orientacion_actual == "S":
+        posicion_nodo = (ultimo_nodo_visitado.posicion_nodo[0], ultimo_nodo_visitado.posicion_nodo[1] + (posicion_actual_robot[1] - ultima_posicion_robot[1]))
+    else:
+        posicion_nodo = (ultimo_nodo_visitado.posicion_nodo[0] + (posicion_actual_robot[0] - ultima_posicion_robot[0]), ultimo_nodo_visitado.posicion_nodo[1])
+    
+    print(posicion_nodo) 
+    
     def nodo_cerca_posicion_actual(nodo):
         global posicion_actual_robot
-        return nodo.posicion_nodo[0] - posicion_actual_robot[0] < DISTANCIA_MAXIMA_NODOS_CERCA and nodo.posicion_nodo[1] - posicion_actual_robot[1] < DISTANCIA_MAXIMA_NODOS_CERCA
+        return nodo.posicion_nodo[0] - posicion_nodo[0] < DISTANCIA_MAXIMA_NODOS_CERCA and nodo.posicion_nodo[1] - posicion_nodo[1] < DISTANCIA_MAXIMA_NODOS_CERCA
 
     nodos_cerca_posicion_actual = list(filter(nodo_cerca_posicion_actual, grafo))
-
-    distancia_recorrida = math.sqrt( (posicion_actual_robot[0] - ultimo_nodo_visitado.posicion_nodo[0]) ** 2 + (posicion_actual_robot[1] - ultimo_nodo_visitado.posicion_nodo[1]) ** 2 )
+    
+    distancia_recorrida = 0
+    if orientacion_actual == "N" or orientacion_actual == "S":
+        distancia_recorrida = abs(posicion_actual_robot[1] - ultima_posicion_robot[1])
+    else:
+        distancia_recorrida = abs(posicion_actual_robot[0] - ultima_posicion_robot[0])
 
     indice_orientacion_inversa = (indice_orientacion_actual + 2) % len(orientaciones)
     orientacion_inversa = orientaciones[indice_orientacion_inversa]
 
     if len(nodos_cerca_posicion_actual) == 0:
-        
-
-        nodo_nuevo = Nodo(grafo, posicion_actual_robot, [])
+    
+        nodo_nuevo = Nodo(grafo, posicion_nodo, [])
         arista_nodo_viejo_nuevo = Arista(ultimo_nodo_visitado, nodo_nuevo, distancia_recorrida, orientacion_actual)
 
         arista_nodo_nuevo_viejo = Arista(nodo_nuevo, ultimo_nodo_visitado, distancia_recorrida, orientacion_inversa)
@@ -88,30 +102,33 @@ def giro(data):
 
     dir_giro = data.data
 
-
-    indice_nueva_orientacion = (indice_orientacion_actual - 1) % len(orientaciones)
+    indice_nueva_orientacion = indice_orientacion_actual
+    if dir_giro == "izq":
+        indice_nueva_orientacion = (indice_orientacion_actual - 1) % len(orientaciones)
     if dir_giro == "der":
         indice_nueva_orientacion = (indice_orientacion_actual + 1) % len(orientaciones)
     
     orientacion_actual = orientaciones[indice_nueva_orientacion]
+    
+    print(len(grafo))
+    print()
+
 
     
 
 
 
 def datos_odometria(data):
-    pose = data.pose.pose
-    print(data)
-    pass
-
-
+    global posicion_actual_robot
+    
+#    print(data)
+    pose = data.pose.pose.position
+    posicion_actual_robot = (pose.x, pose.y)
 
 
 
 rospy.init_node('navegacion')
 rospy.Subscriber("/navegacion/giro", String, giro)
-
-
-odom_sub = rospy.Subscriber('/odom', Odometry, datos_odometria)
+rospy.Subscriber('/odom', Odometry, datos_odometria)
 
 rospy.spin()

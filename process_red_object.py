@@ -33,7 +33,7 @@ def read_sensor(data):
     global analizar_imagen
     if is_near_object(data.ranges):
         #stop
-        vel_null = Twist(0,0,0)
+        vel_null = Twist()
         motor_pub.publish(vel_null)
         print(vel_null)
 

@@ -266,8 +266,8 @@ def read_image_data(data):
     except CvBridgeError as e:
         print(e) 
 
-    cv2.imshow("Video", imagen_edges_a_color)
-    cv2.waitKey(3)
+    #cv2.imshow("Video", imagen_edges_a_color)
+    #cv2.waitKey(3)
 
     
 
