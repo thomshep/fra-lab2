@@ -1,6 +1,7 @@
 import rospy
 from std_msgs.msg import String
 from nav_msgs.msg import Odometry
+import math
 
 class Nodo:
     def __init__(self, grafo, posicion_nodo, aristas):
@@ -34,7 +35,7 @@ orientacion_actual = "N"
 posicion_actual_robot = (0,0)
 
 def giro(data):
-    global orientacion_actual, orientaciones, grafo, posicion_actual_robot
+    global orientacion_actual, orientaciones, grafo, posicion_actual_robot, ultimo_nodo_visitado
 
     indice_orientacion_actual = orientaciones.index(orientacion_actual)
 
@@ -44,7 +45,7 @@ def giro(data):
 
     nodos_cerca_posicion_actual = list(filter(nodo_cerca_posicion_actual, grafo))
 
-    distancia_recorrida = 0
+    distancia_recorrida = math.sqrt( (posicion_actual_robot[0] - ultimo_nodo_visitado.posicion_nodo[0]) ** 2 + (posicion_actual_robot[1] - ultimo_nodo_visitado.posicion_nodo[1]) ** 2 )
 
     indice_orientacion_inversa = (indice_orientacion_actual + 2) % len(orientaciones)
     orientacion_inversa = orientaciones[indice_orientacion_inversa]
