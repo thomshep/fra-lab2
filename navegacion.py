@@ -25,6 +25,15 @@ class Arista:
         self.orientacion = orientacion
 
 
+def camino_mas_corto(G, nodo_inicial, nodo_final):
+    shortest_path = nx.dijkstra_path(G, nodo_inicial.id, nodo_final.id, weight='weight')
+
+    # Obtener la distancia del camino más corto
+    shortest_distance = nx.dijkstra_path_length(G, nodo_inicial.id, nodo_final.id, weight='weight')
+
+    print(f"Camino: {shortest_path} => Distancia: {shortest_distance}")
+
+
 DISTANCIA_MAXIMA_NODOS_CERCA = 0.15
 
 
@@ -73,17 +82,28 @@ def giro(data):
     indice_orientacion_inversa = (indice_orientacion_actual + 2) % len(orientaciones)
     orientacion_inversa = orientaciones[indice_orientacion_inversa]
 
+    # Calculo nueva orientacion
+    indice_nueva_orientacion = indice_orientacion_actual
+    orientacion_antigua = orientacion_actual
+    if dir_giro == "izq":
+        indice_nueva_orientacion = (indice_orientacion_actual - 1) % len(orientaciones)
+    if dir_giro == "der":
+        indice_nueva_orientacion = (indice_orientacion_actual + 1) % len(orientaciones)
+    
+    orientacion_actual = orientaciones[indice_nueva_orientacion]
+    print("nueva orientacion: " + orientacion_actual)
+
     if len(nodos_cerca_posicion_actual) == 0:
         print("Agrego nodo grafo")
     
         nodo_nuevo = Nodo(grafo, posicion_nodo, [])
         G.add_node(nodo_nuevo.id, pos=nodo_nuevo.posicion_nodo)
 
-        arista_nodo_viejo_nuevo = Arista(ultimo_nodo_visitado, nodo_nuevo, distancia_recorrida, orientacion_actual)
+        arista_nodo_viejo_nuevo = Arista(ultimo_nodo_visitado, nodo_nuevo, distancia_recorrida, orientacion_antigua)
 
         arista_nodo_nuevo_viejo = Arista(nodo_nuevo, ultimo_nodo_visitado, distancia_recorrida, orientacion_inversa)
 
-        G.add_edge(nodo_nuevo.id, ultimo_nodo_visitado.id)
+        G.add_edge(nodo_nuevo.id, ultimo_nodo_visitado.id, label=orientacion_actual, weight=distancia_recorrida)
 
         ultimo_nodo_visitado.agregar_arista(arista_nodo_viejo_nuevo)
         nodo_nuevo.agregar_arista(arista_nodo_nuevo_viejo)
@@ -104,10 +124,10 @@ def giro(data):
         aristas_con_nodo_actual = list(filter(arista_contiene_nodo_actual, ultimo_nodo_visitado.aristas))
 
         if len(aristas_con_nodo_actual) == 0:
-            arista_nodo_viejo_actual = Arista(ultimo_nodo_visitado, nodo_actual, distancia_recorrida, orientacion_actual)
+            arista_nodo_viejo_actual = Arista(ultimo_nodo_visitado, nodo_actual, distancia_recorrida, orientacion_antigua)
             arista_nodo_actual_viejo = Arista(nodo_actual, ultimo_nodo_visitado, distancia_recorrida, orientacion_inversa)
 
-            G.add_edge(nodo_actual.id, ultimo_nodo_visitado.id)
+            G.add_edge(nodo_actual.id, ultimo_nodo_visitado.id, label=orientacion_actual, weight=distancia_recorrida)
 
             ultimo_nodo_visitado.agregar_arista(arista_nodo_viejo_actual)
             nodo_actual.agregar_arista(arista_nodo_actual_viejo)
@@ -118,15 +138,6 @@ def giro(data):
 
 
     dir_giro = data.data
-
-    indice_nueva_orientacion = indice_orientacion_actual
-    if dir_giro == "izq":
-        indice_nueva_orientacion = (indice_orientacion_actual - 1) % len(orientaciones)
-    if dir_giro == "der":
-        indice_nueva_orientacion = (indice_orientacion_actual + 1) % len(orientaciones)
-    
-    orientacion_actual = orientaciones[indice_nueva_orientacion]
-    print("nueva orientacion: " + orientacion_actual)
 
     ultima_posicion_robot = copia_posicion_actual_robot
 
@@ -166,6 +177,8 @@ def signal_handler(signal, frame):
 
     # Guardar la imagen en formato PNG
     plt.savefig('grafo.png', format='png')
+
+    camino_mas_corto()
 
 #esto se va a ejecutar cuando se corte el programa: para en ese momento almacenar el grafo generado
 signal.signal(signal.SIGINT, signal_handler)
