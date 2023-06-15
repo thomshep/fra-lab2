@@ -2,6 +2,10 @@ import rospy
 from std_msgs.msg import String
 from nav_msgs.msg import Odometry
 import math
+import networkx as nx
+import matplotlib.pyplot as plt
+
+import signal
 
 class Nodo:
     def __init__(self, grafo, posicion_nodo, aristas):
@@ -36,9 +40,13 @@ orientacion_actual = "E"
 posicion_actual_robot = (0,0)
 ultima_posicion_robot = (0,0)
 
+G = nx.Graph()
+G.add_node(nodo_inicial.id, pos=(0, 0))
+
+
 
 def giro(data):
-    global orientacion_actual, orientaciones, grafo, posicion_actual_robot, ultimo_nodo_visitado, ultima_posicion_robot
+    global orientacion_actual, orientaciones, grafo, posicion_actual_robot, ultimo_nodo_visitado, ultima_posicion_robot, G
 
     copia_posicion_actual_robot = posicion_actual_robot # para que no se vaya modificando mientras procesa todo este codigo
 
@@ -69,9 +77,13 @@ def giro(data):
         print("Agrego nodo grafo")
     
         nodo_nuevo = Nodo(grafo, posicion_nodo, [])
+        G.add_node(nodo_nuevo.id, pos=nodo_nuevo.posicion_nodo)
+
         arista_nodo_viejo_nuevo = Arista(ultimo_nodo_visitado, nodo_nuevo, distancia_recorrida, orientacion_actual)
 
         arista_nodo_nuevo_viejo = Arista(nodo_nuevo, ultimo_nodo_visitado, distancia_recorrida, orientacion_inversa)
+
+        G.add_edge(nodo_nuevo.id, ultimo_nodo_visitado.id)
 
         ultimo_nodo_visitado.agregar_arista(arista_nodo_viejo_nuevo)
         nodo_nuevo.agregar_arista(arista_nodo_nuevo_viejo)
@@ -94,6 +106,8 @@ def giro(data):
         if len(aristas_con_nodo_actual) == 0:
             arista_nodo_viejo_actual = Arista(ultimo_nodo_visitado, nodo_actual, distancia_recorrida, orientacion_actual)
             arista_nodo_actual_viejo = Arista(nodo_actual, ultimo_nodo_visitado, distancia_recorrida, orientacion_inversa)
+
+            G.add_edge(nodo_actual.id, ultimo_nodo_visitado.id)
 
             ultimo_nodo_visitado.agregar_arista(arista_nodo_viejo_actual)
             nodo_actual.agregar_arista(arista_nodo_actual_viejo)
@@ -136,5 +150,24 @@ def datos_odometria(data):
 rospy.init_node('navegacion')
 rospy.Subscriber("/navegacion/giro", String, giro)
 rospy.Subscriber('/odom', Odometry, datos_odometria)
+
+def signal_handler(signal, frame):
+    global G
+    print("se esta cortando programa")
+    # Obtener posiciones de los nodos
+    pos = nx.get_node_attributes(G, 'pos')
+
+    # Dibujar el grafo
+    plt.figure(figsize=(8, 8))
+    nx.draw_networkx_nodes(G, pos=pos, node_color='r', node_size=200)
+    nx.draw_networkx_edges(G, pos=pos, edge_color='b')
+    nx.draw_networkx_labels(G, pos=pos)
+    plt.axis('off')
+
+    # Guardar la imagen en formato PNG
+    plt.savefig('grafo.png', format='png')
+
+#esto se va a ejecutar cuando se corte el programa: para en ese momento almacenar el grafo generado
+signal.signal(signal.SIGINT, signal_handler)
 
 rospy.spin()
