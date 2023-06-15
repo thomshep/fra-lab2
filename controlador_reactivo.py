@@ -18,6 +18,7 @@ GIRANDO = 1
 
 # PARED (implica frenar y girar 90)
 PARED = 2
+DETENIDO = 3
 
 
 
@@ -71,11 +72,35 @@ def datos_hay_pared(hay_pared):
         t = threading.Timer(TIEMPO_GIRANDO, termino_girar)
         t.start()
         
+def datos_process_objects(objeto):
+    global estado
+    if estado != AVANZAR:
+        return
+
+    if objeto == "no":
+        estado = AVANZAR
+        return
+
+    if objeto == "roca": # freno
+        estado = DETENIDO
+
+        twist = Twist()
+        motor_pub.publish(twist)
+        print("veo roca -> freno")
+
+    elif objeto == "minotauro":
+        estado = DETENIDO
+
+        # controlar
+        pass
 
 
 def datos_seguidor_lineas(velocidades):
     global estado
 
+    if estado == DETENIDO:
+        return
+    
     if estado == AVANZAR:
         print("avanzo como me dice seguidor")
 
@@ -154,6 +179,7 @@ rospy.init_node('controlador_reactivo')
 
 rospy.Subscriber("/controlador_reactivo/doblar", String, datos_doblar)
 rospy.Subscriber("/controlador_reactivo/cmd_vel", Twist, datos_seguidor_lineas)
+rospy.Subscriber("/controlador_reactivo/objeto", String, datos_process_objects)
 rospy.Subscriber("/controlador_reactivo/hay_pared", Bool, datos_hay_pared)
 motor_pub = rospy.Publisher("dynamixel_workbench/cmd_vel", Twist, queue_size=20)
 giro_pub = rospy.Publisher("/navegacion/giro", String, queue_size=20)

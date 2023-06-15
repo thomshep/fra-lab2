@@ -1,16 +1,14 @@
-import matplotlib.pyplot as plt
 import rospy
-from sensor_msgs.msg import LaserScan
-import numpy as np
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, LaserScan
 from geometry_msgs.msg import Twist, Vector3
+from std_msgs.msg import String
 
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
 #constant
 MAX_DISTANCE_OBJECT = 0.15
-ANGLES_LIDAR_INSPECTED = 10
+ANGLES_LIDAR_INSPECTED = 20
 MAX_DISTANCE_DIFFERENCE = 0.03
 #variables
 cv_image_cam = None
@@ -32,48 +30,32 @@ def is_near_object(distances):
 def read_sensor(data):
     global analizar_imagen
     if is_near_object(data.ranges):
-        #stop
-        vel_null = Twist()
-        motor_pub.publish(vel_null)
-        print(vel_null)
-
+        print("is near object")
         analizar_imagen = True
     else:
-        #devolver control
-        twist = Twist()
-        twist.linear = Vector3(0.1,0,0)
-        motor_pub.publish(twist)
-
-        
+        print("no ve objeto")
+        analizar_imagen = False
+            
 
 def process_object(res):
-    #res2 = cv2.cvtColor(frame_hsv, cv2.COLOR_RGBGRAY)
-    #circles = cv2.HoughCircles(res2,cv2.HOUGH_GRADIENT,1,20,param1=50,param2=30,minRadius = 10,maxRadius = 30)
+    rgb = cv2.cvtColor(res, cv2.COLOR_HSV2RGB)
+    gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
+    contours, _ = cv2.findContours(gray, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    ### ALTERNATIVA a HoughCircles ###
-    contours, _ = cv2.findContours(res, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-    THRESHOLD_SIZE = 0.2
-    redObjects = []
+    THRESHOLD_SIZE = 4000
     for contour in contours:
         area = cv2.contourArea(contour)
-        print(area)
 
         if area > THRESHOLD_SIZE:
-            x, y, w, h = cv2.boundingRect(contour)
-            red_object = (contour, area, (x + (w / 2), y + (h / 2))) # (contour, area, centro)
-            redObjects.append(red_object)
+            print(area)
+            # x, y, w, h = cv2.boundingRect(contour)
+            # red_object = (contour, area, (x + (w / 2), y + (h / 2))) # (contour, area, centro)
+            # redObjects.append(red_object)
+            print("reconocio objeto")
+
             return True
     
-    return False
-
-    if redObjects != []:
-        ## nos podemos quedar con el objeto rojo mas grande
-        pass 
-
-    #there_is_interest_object = not circles is None
-    ### Fin ###
-        
+    return False  
         
 
 def read_image_data(data):
@@ -89,27 +71,33 @@ def read_image_data(data):
         print(e)
 
     frame_HSV = cv2.cvtColor(cv_image_cam, cv2.COLOR_BGR2HSV)
-    #buen rojo
-    mask_red = cv2.inRange(frame_HSV, (160, 131, 89), (189,255, 255))
     
-    red_image = cv2.bitwise_and(cv_image_cam, cv_image_cam, mask = mask_red)
+    mask_red = cv2.inRange(frame_HSV, (160, 131, 89), (189,255, 255))
+    new_red = cv2.inRange(frame_HSV, (136, 72, 94), (186, 255, 255))
+    red_image = cv2.bitwise_and(cv_image_cam, cv_image_cam, mask = new_red)
 
-    #TODO: definir
-    mask_yellow = cv2.inRange(frame_HSV, (0, 0, 0), (0,0, 0))
+    mask_yellow = cv2.inRange(frame_HSV, (19, 6, 216), (71, 249, 255))
     yellow_image = cv2.bitwise_and(cv_image_cam, cv_image_cam, mask = mask_yellow)
 
-    if process_object(red_image):
-        twist = Twist()
-        twist.angular = Vector3(0,0, 1)
-        motor_pub.publish(twist)
-
-    if process_object(yellow_image):
+    if process_object(yellow_image): # si ve el minotauro, se mantiene a 10 cms
         twist = Twist()
         twist.angular = Vector3(0,0, -1)
         motor_pub.publish(twist)
+        objects_pub.publish("minotauro")
+        
+    elif process_object(red_image): # si ve rocas, se detiene
+        twist = Twist()
+        motor_pub.publish(twist)
+        objects_pub.publish("roca")
+
+    else:
+        objects_pub.publish("no")      
 
 
-rospy.init_node('nodo_red')
+
+rospy.init_node('procesador_objetos')
+
+objects_pub = rospy.Publisher("/controlador_reactivo/objeto", String, queue_size=10)
 image_pub = rospy.Publisher("/mask",Image,queue_size=10)
 motor_pub = rospy.Publisher("dynamixel_workbench/cmd_vel", Twist, queue_size=20)
 rospy.Subscriber("/scan", LaserScan, read_sensor)

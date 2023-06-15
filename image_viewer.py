@@ -14,5 +14,5 @@ def read_image_data(data):
 
 rospy.init_node('img_viewer')
 
-rospy.Subscriber("/mask", Image, read_image_data)
+rospy.Subscriber("/usb_cam/image_raw", Image, read_image_data)
 rospy.spin()
