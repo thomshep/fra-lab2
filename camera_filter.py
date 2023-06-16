@@ -16,7 +16,7 @@ minima_diferencia_blancos = 1
 maximo_largo_segmento = 50
 minimo_tamano_pendiente = 0.4
 margen_superior = 100
-k_vel_giro = -1/3
+k_vel_giro = -1/2
 minima_dif_promedios = 0.01
 
 def read_image_data(data):

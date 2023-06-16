@@ -7,9 +7,9 @@ import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
 #constant
-MAX_DISTANCE_OBJECT = 0.22
+MAX_DISTANCE_OBJECT = 0.2
 ANGLES_LIDAR_INSPECTED = 20
-MAX_DISTANCE_DIFFERENCE = 0.03
+MAX_DISTANCE_DIFFERENCE = 0.1
 #variables
 cv_image_cam = None
 red_image = None
@@ -17,11 +17,11 @@ analizar_imagen = False
 
 #chequea si al menos tiene 3 consecutivos entre 8 y 12 cm
 def is_near_object(distances):
-    
     for index in range(-ANGLES_LIDAR_INSPECTED + 1, ANGLES_LIDAR_INSPECTED): # -10 grados a 10 grados
         if distances[index-1] > 0 and abs(distances[index-1] - MAX_DISTANCE_OBJECT) <= MAX_DISTANCE_DIFFERENCE \
-            and distances[index] >0 and abs(distances[index] - MAX_DISTANCE_OBJECT) <= MAX_DISTANCE_DIFFERENCE \
+            and distances[index] > 0 and abs(distances[index] - MAX_DISTANCE_OBJECT) <= MAX_DISTANCE_DIFFERENCE \
             and distances[index + 1] > 0 and abs(distances[index+1] - MAX_DISTANCE_OBJECT) <= MAX_DISTANCE_DIFFERENCE:
+            print(f"Get distance: {distances[index]}")
             return True
     
     return False #cualquier otro caso
@@ -30,7 +30,9 @@ def is_near_object(distances):
 def read_sensor(data):
     global analizar_imagen
     if is_near_object(data.ranges):
-        print("is near object")
+        print("---------------")
+        print("habilito camara")
+        print("---------------")
         analizar_imagen = True
     else:
         print("no ve objeto")
@@ -63,7 +65,6 @@ def read_image_data(data):
 
     if not analizar_imagen:
         return
-    
 
     try:
         cv_image_cam = CvBridge().imgmsg_to_cv2(data, "bgr8")
@@ -72,7 +73,7 @@ def read_image_data(data):
 
     frame_HSV = cv2.cvtColor(cv_image_cam, cv2.COLOR_BGR2HSV)
     
-    mask_red = cv2.inRange(frame_HSV, (160, 131, 89), (189,255, 255))
+    # mask_red = cv2.inRange(frame_HSV, (160, 131, 89), (189,255, 255))
     new_red = cv2.inRange(frame_HSV, (136, 72, 94), (186, 255, 255))
     red_image = cv2.bitwise_and(cv_image_cam, cv_image_cam, mask = new_red)
 
@@ -80,12 +81,14 @@ def read_image_data(data):
     yellow_image = cv2.bitwise_and(cv_image_cam, cv_image_cam, mask = mask_yellow)
 
     if process_object(yellow_image): # si ve el minotauro, se mantiene a 10 cms
+        print("veo minotauro")
         twist = Twist()
         twist.angular = Vector3(0,0, -1)
         motor_pub.publish(twist)
         objects_pub.publish("minotauro")
         
     elif process_object(red_image): # si ve rocas, se detiene
+        print("veo roca")
         twist = Twist()
         motor_pub.publish(twist)
         objects_pub.publish("roca")
