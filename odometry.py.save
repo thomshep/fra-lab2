@@ -39,7 +39,7 @@ def getData(data):
 
     vx = previous_data.linear.x
     vy = previous_data.linear.y
-    
+
     delta_x = (vx * cos(th) - vy * sin(th)) * dt
     delta_y = (vx * sin(th) + vy * cos(th)) * dt
 
@@ -49,14 +49,7 @@ def getData(data):
     x += delta_x
     y += delta_y
     th += delta_th
-    
     print(th)
-    print(dt)
-    print(vx)
-    print(vy)
-    print(vth)
-    print("----------------")
-
     # since all odometry is 6DOF we'll need a quaternion created from yaw
     odom_quat = tf.transformations.quaternion_from_euler(0, 0, th)
 

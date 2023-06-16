@@ -10,13 +10,13 @@ from cv_bridge import CvBridge, CvBridgeError
 
 #constantes
 k = 1/240
-vel_angular_max = 1.5
+vel_angular_max = 1
 minima_diferencia_blancos = 1
 
 maximo_largo_segmento = 50
 minimo_tamano_pendiente = 0.4
 margen_superior = 100
-k_vel_giro = -1/7
+k_vel_giro = -1/3
 minima_dif_promedios = 0.01
 
 def read_image_data(data):
@@ -175,11 +175,16 @@ def read_image_data(data):
 
 
     twist = Twist()
-    twist.linear = Vector3(0.07,0,0)
+    twist.linear = Vector3(0.2,0,0)
 
     velocidad_giro = 0
     if abs(promedio_seg_izq - promedio_seg_der) > minima_dif_promedios:
         velocidad_giro = k_vel_giro * (promedio_seg_izq - promedio_seg_der)
+        if velocidad_giro > vel_angular_max:
+            velocidad_giro = vel_angular_max
+            
+        if velocidad_giro < -vel_angular_max:
+            velocidad_giro = -vel_angular_max
 
     if(promedio_seg_izq > promedio_seg_der):
         #print("girar der - izq > der")

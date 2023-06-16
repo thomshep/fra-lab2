@@ -25,8 +25,8 @@ recien_giro = False
 maximo_tamano_pendiente = 0.1
 maximo_largo_segmento = 50
 minimo_tamano_pendiente_vertical = 0.4
-tiempo_empezar_girar = 2.5 #5
-tiempo_girando = 5.5 #6
+tiempo_empezar_girar = 1 #5
+tiempo_girando = 5.8 #6
 diferencia_maxima_segmentos = 10
 
 contador = 0
@@ -188,7 +188,8 @@ def read_image_data(data):
                 print("giro " + dir_giro)
                 estado = 1
                 print("espero para girar")
-
+              
+                
                 def empezar_girar():
                     global estado
                     estado = 2
@@ -228,8 +229,8 @@ def read_image_data(data):
     imagen_edges_a_color = draw_line_segments(imagen_edges_a_color, segmentos_derecha_verticales)
     imagen_edges_a_color = draw_line_segments(imagen_edges_a_color, segmentos_izquierda_verticales)
 
-    cv2.imshow("Video", imagen_edges_a_color)
-    cv2.waitKey(3)
+   # cv2.imshow("Video", imagen_edges_a_color)
+   # cv2.waitKey(3)
 
     
 

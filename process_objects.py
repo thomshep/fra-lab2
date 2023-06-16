@@ -7,7 +7,7 @@ import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
 #constant
-MAX_DISTANCE_OBJECT = 0.15
+MAX_DISTANCE_OBJECT = 0.22
 ANGLES_LIDAR_INSPECTED = 20
 MAX_DISTANCE_DIFFERENCE = 0.03
 #variables
@@ -99,7 +99,7 @@ rospy.init_node('procesador_objetos')
 
 objects_pub = rospy.Publisher("/controlador_reactivo/objeto", String, queue_size=10)
 image_pub = rospy.Publisher("/mask",Image,queue_size=10)
-motor_pub = rospy.Publisher("dynamixel_workbench/cmd_vel", Twist, queue_size=20)
+motor_pub = rospy.Publisher("iij/cmd_vel", Twist, queue_size=20)
 rospy.Subscriber("/scan", LaserScan, read_sensor)
 rospy.Subscriber("/usb_cam/image_raw", Image, read_image_data)
 rospy.spin()

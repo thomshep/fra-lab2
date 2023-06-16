@@ -84,6 +84,7 @@ def giro(data):
 
     # Calculo nueva orientacion
     indice_nueva_orientacion = indice_orientacion_actual
+    dir_giro = data.data
     orientacion_antigua = orientacion_actual
     if dir_giro == "izq":
         indice_nueva_orientacion = (indice_orientacion_actual - 1) % len(orientaciones)
@@ -136,9 +137,6 @@ def giro(data):
         ultimo_nodo_visitado = nodo_actual
 
 
-
-    dir_giro = data.data
-
     ultima_posicion_robot = copia_posicion_actual_robot
 
     print(len(grafo))
@@ -178,7 +176,7 @@ def signal_handler(signal, frame):
     # Guardar la imagen en formato PNG
     plt.savefig('grafo.png', format='png')
 
-    camino_mas_corto()
+    #camino_mas_corto()
 
 #esto se va a ejecutar cuando se corte el programa: para en ese momento almacenar el grafo generado
 signal.signal(signal.SIGINT, signal_handler)
