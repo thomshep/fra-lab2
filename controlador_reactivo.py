@@ -74,11 +74,13 @@ def datos_hay_pared(hay_pared):
         
 def datos_process_objects(objeto):
     global estado
-    if estado != AVANZAR:
-        return
+   
 
     if objeto.data == "no":
         estado = AVANZAR
+        return
+    
+    if estado != AVANZAR:
         return
 
     if objeto.data == "roca": # freno
