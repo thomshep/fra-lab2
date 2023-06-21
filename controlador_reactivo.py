@@ -86,9 +86,6 @@ def datos_process_objects(objeto):
 
         twist = Twist()
         motor_pub.publish(twist)
-        import time
-        print("duermo")
-        time.sleep(2)
         print("veo roca -> freno")
 
     elif objeto.data == "minotauro":

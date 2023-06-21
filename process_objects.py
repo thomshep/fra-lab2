@@ -37,6 +37,7 @@ def read_sensor(data):
     else:
         print("no ve objeto")
         analizar_imagen = False
+        objects_pub.publish("no")
             
 
 def process_object(res):
