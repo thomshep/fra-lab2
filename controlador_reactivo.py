@@ -139,7 +139,7 @@ def datos_doblar(doblar):
             twist.angular = Vector3(0,0, signo * 1)
             motor_pub.publish(twist)
 
-        hilo1 = threading.Timer(0.3, segundo_giro)
+        hilo1 = threading.Timer(1, segundo_giro)
         hilo1.start()
 
         print("giro")
