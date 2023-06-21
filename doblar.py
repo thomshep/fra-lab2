@@ -187,14 +187,14 @@ def read_image_data(data):
             if len(coincidencias_segmentos) > 0:
                 print("inhabilito giro")
                 doblar_pub.publish(dir_giro)
-                giro_habilitado = False
-                def habilitar_nuevo_giro():
-                    global giro_habilitado
-                    print("habilito giro")
-                    giro_habilitado = True
+                # giro_habilitado = False
+                # def habilitar_nuevo_giro():
+                #     global giro_habilitado
+                #     print("habilito giro")
+                #     giro_habilitado = True
 
-                hilo = threading.Timer(2, habilitar_nuevo_giro)
-                hilo.start()
+                # hilo = threading.Timer(2, habilitar_nuevo_giro)
+                # hilo.start()
                 
                 contador += 1
                 print(contador)

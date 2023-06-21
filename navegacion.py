@@ -52,10 +52,14 @@ ultima_posicion_robot = (0,0)
 G = nx.Graph()
 G.add_node(nodo_inicial.id, pos=(0, 0))
 
+acaba_de_girar = False
 
 
 def giro(data):
-    global orientacion_actual, orientaciones, grafo, posicion_actual_robot, ultimo_nodo_visitado, ultima_posicion_robot, G
+    global orientacion_actual, orientaciones, grafo, posicion_actual_robot, ultimo_nodo_visitado, ultima_posicion_robot, G, acaba_de_girar
+
+    if acaba_de_girar:
+        return
 
     copia_posicion_actual_robot = posicion_actual_robot # para que no se vaya modificando mientras procesa todo este codigo
 
@@ -141,6 +145,17 @@ def giro(data):
 
     print(len(grafo))
     print()
+
+
+    acaba_de_girar = True
+
+    import threading
+    def cambiar_acaba_de_girar():
+        global acaba_de_girar
+        acaba_de_girar = False
+
+    hilo = threading.Timer(2, cambiar_acaba_de_girar)
+    hilo.start()
 
 
     
