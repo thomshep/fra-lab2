@@ -131,6 +131,7 @@ def datos_doblar(doblar):
             signo = -1
 
         twist = Twist()
+        twist.linear = Vector3(0.3,0, 0)
         twist.angular = Vector3(0,0, signo * 1)
         print("giro")
 
