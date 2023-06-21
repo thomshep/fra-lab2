@@ -94,6 +94,7 @@ def read_image_data(data):
         objects_pub.publish("roca")
 
     else:
+        print("camara no ve")
         objects_pub.publish("no")      
 
 
