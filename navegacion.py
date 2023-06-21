@@ -72,6 +72,11 @@ def giro(data):
         posicion_nodo = (ultimo_nodo_visitado.posicion_nodo[0] + (copia_posicion_actual_robot[0] - ultima_posicion_robot[0]), ultimo_nodo_visitado.posicion_nodo[1])
     
     print(posicion_nodo) 
+    print("posicion actual robot:" )
+    print( copia_posicion_actual_robot)
+    print("ultima posicion robot:" )
+    print( ultima_posicion_robot)
+
     
     def nodo_cerca_posicion_actual(nodo):
         return abs(nodo.posicion_nodo[0] - posicion_nodo[0]) < DISTANCIA_MAXIMA_NODOS_CERCA and abs(nodo.posicion_nodo[1] - posicion_nodo[1]) < DISTANCIA_MAXIMA_NODOS_CERCA
