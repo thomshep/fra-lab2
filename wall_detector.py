@@ -17,7 +17,7 @@ pixeles_a_evaluar_fila = 8
 altura_maxima_pared = 500
 
 minimo_largo_segmento = 100
-margen_superior = 360
+margen_superior = 353
 maximo_tamano_pendiente = 0.1
 
 # def girar():
@@ -49,45 +49,7 @@ def read_image_data(data):
 
         #formas de sacar ruido
         kernel = np.ones((5, 5), np.uint8)
-        #frame_RGB = cv2.morphologyEx(frame_RGB, cv2.MORPH_OPEN, kernel)
-        #frame_RGB = cv2.fastNlMeansDenoisingColored(frame_RGB,None,10,10,7,21)
-        
 
-        #cv2.imshow("Image window", frame_RGB)
-        #cv2.waitKey(40)
-
-
-
-        # ####### USANDO PUNTOS BLANCOS
-        
-        # centro_eje_x_imagen = math.floor(frame_RGB.shape[1] / 2)
-        
-
-
-        # for indice_fila, fila in enumerate(frame_RGB):
-        #     cantidad_blancos = 0
-        #     if indice_fila > altura_maxima_pared:
-        #         break
-        #     #revisar las 6 columnas adyacentes a la izquierda
-        #     for indice_columna in range(centro_eje_x_imagen - math.floor(pixeles_a_evaluar_fila / 2), centro_eje_x_imagen + math.floor(pixeles_a_evaluar_fila / 2)):
-        #         pixel = frame_RGB[-1 - indice_fila][indice_columna]
-        #         #hay color blanco
-        #         if(pixel[0] > 100 and pixel[1] > 100 and pixel[2] > 100):
-        #             cantidad_blancos += 1
-                    
-        #             print(cantidad_blancos)
-        #             #para salir del otro for
-        #             if cantidad_blancos > pixeles_a_evaluar_fila / 2:
-        #                 esta_girando = True
-                        
-        #                 print(indice_fila)
-        #                 print(frame_RGB.shape)
-                    
-
-        #                 girar()
-        #                 return
-
-        # ####### USANDO SEGMENTOS DE RECTA
 
         edges = cv2.Canny(mask, 200, 400)
         #recortar parte de arriba imagen?
