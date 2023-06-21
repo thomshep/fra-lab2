@@ -91,8 +91,9 @@ def datos_process_objects(objeto):
     elif objeto == "minotauro":
         estado = DETENIDO
 
-        # controlar
-        pass
+        twist = Twist()
+        motor_pub.publish(twist)
+        print("veo minotauro -> freno")
 
 
 def datos_seguidor_lineas(velocidades):
