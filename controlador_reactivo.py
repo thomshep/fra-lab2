@@ -76,7 +76,7 @@ def datos_process_objects(objeto):
     global estado
    
 
-    if objeto.data == "no":
+    if objeto.data == "no" and estado == DETENIDO:
         estado = AVANZAR
         return
     
