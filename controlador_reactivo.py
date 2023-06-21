@@ -77,11 +77,11 @@ def datos_process_objects(objeto):
     if estado != AVANZAR:
         return
 
-    if objeto == "no":
+    if objeto.data == "no":
         estado = AVANZAR
         return
 
-    if objeto == "roca": # freno
+    if objeto.data == "roca": # freno
         estado = DETENIDO
 
         twist = Twist()
@@ -91,7 +91,7 @@ def datos_process_objects(objeto):
         time.sleep(2)
         print("veo roca -> freno")
 
-    elif objeto == "minotauro":
+    elif objeto.data == "minotauro":
         estado = DETENIDO
 
         twist = Twist()
