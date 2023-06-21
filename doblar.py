@@ -21,6 +21,7 @@ margen_superior = 70
 
 esta_girando = False
 recien_giro = False
+giro_habilitado = True
 
 maximo_tamano_pendiente = 0.1
 maximo_largo_segmento = 50
@@ -60,7 +61,10 @@ def girar(direccion):
 
 
 def read_image_data(data):
-    global esta_girando, minimo_tamano_pendiente_vertical
+    global esta_girando, minimo_tamano_pendiente_vertical, giro_habilitado
+
+    if not giro_habilitado:
+        return
 
     # if estado != 0:
     #     return
@@ -159,7 +163,7 @@ def read_image_data(data):
         segmentos_derecha_verticales = [max(segmentos_derecha_verticales, key=lambda x: x[0][1])]
 
     def evaluar_segmentos(segmentos, dir_giro, segmentos_verticales):
-        global estado, tiempo_empezar_girar, contador
+        global estado, tiempo_empezar_girar, contador, giro_habilitado
         if len(segmentos_verticales) > 0 and len(segmentos) > 0:
             segmento_vertical = segmentos_verticales[0]
 
@@ -181,7 +185,16 @@ def read_image_data(data):
             coincidencias_segmentos = list(filter(coincide_extremo_segmento_vertical_con_horizontal, segmentos))
 
             if len(coincidencias_segmentos) > 0:
+                print("inhabilito giro")
                 doblar_pub.publish(dir_giro)
+                giro_habilitado = False
+                def habilitar_nuevo_giro():
+                    global giro_habilitado
+                    print("habilito giro")
+                    giro_habilitado = True
+
+                hilo = threading.Timer(2, habilitar_nuevo_giro)
+                hilo.start()
                 
                 contador += 1
                 print(contador)
