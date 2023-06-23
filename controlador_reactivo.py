@@ -7,6 +7,7 @@ import threading
 
 #Constantes:
 TIEMPO_GIRANDO = 5.5
+TIEMPO_RETROCESO = 2
 TIEMPO_EMPEZAR_GIRAR = 1.5
 TIEMPO_ESPERA_DETECCIONES_GIRAR = 1
 DETECCIONES_NECESARIAS_GIRAR = 3
@@ -28,7 +29,7 @@ cantidad_girar_der_detectados = 0
 
 
 def datos_hay_pared(hay_pared):
-    global estado, TIEMPO_GIRANDO
+    global estado, TIEMPO_GIRANDO,TIEMPO_RETROCESO
 
     if estado != AVANZAR:
         return
@@ -42,35 +43,48 @@ def datos_hay_pared(hay_pared):
         print("freno, hay pared")
         twist = Twist()
         motor_pub.publish(twist)
-
-        #se elige direccion de giro aleatoriamente
-        signo = 1
-        doblar = "izq"
-
-        if random.random() > 0.5:
-            signo = -1
-            doblar = "der"
-
-        twist = Twist()
-
-        twist.angular = Vector3(0,0, signo * 1)
+        
+        print("voy hacia atras")
+        twist.linear = Vector3(-0.2,0,0)
         motor_pub.publish(twist)
-
-        giro_pub.publish(doblar)
-
-        #se espera cierto tiempo mientras gira, durante el cual no se reacciona a los datos sensados
-        def termino_girar():
-            global estado
-            estado = AVANZAR
-
-            print("termino girar despues de pared")
+        
+        #empiezo a girar luego de ir hacia atras
+        def empiezo_girar():
+            print("freno, previo giro")
             twist = Twist()
-            twist.angular = Vector3(0,0,0)
+            motor_pub.publish(twist)
             
+            #se elige direccion de giro aleatoriamente
+            signo = 1
+            doblar = "izq"
+
+            if random.random() > 0.5:
+                signo = -1
+                doblar = "der"
+
+            twist = Twist()
+
+            twist.angular = Vector3(0,0, signo * 1)
             motor_pub.publish(twist)
 
-        t = threading.Timer(TIEMPO_GIRANDO, termino_girar)
-        t.start()
+            giro_pub.publish(doblar)
+
+            #se espera cierto tiempo mientras gira, durante el cual no se reacciona a los datos sensados
+            def termino_girar():
+                global estado
+                estado = AVANZAR
+
+                print("termino girar despues de pared")
+                twist = Twist()
+                twist.angular = Vector3(0,0,0)
+                
+                motor_pub.publish(twist)
+
+            t = threading.Timer(TIEMPO_GIRANDO, termino_girar)
+            t.start()
+            
+        t_giro = threading.Timer(TIEMPO_RETROCESO, empiezo_girar)
+        t_giro.start()
         
 def datos_process_objects(objeto):
     global estado
