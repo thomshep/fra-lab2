@@ -4,6 +4,7 @@ from nav_msgs.msg import Odometry
 import math
 import networkx as nx
 import matplotlib.pyplot as plt
+import time
 
 import signal
 
@@ -36,7 +37,14 @@ def camino_mas_corto(G, nodo_inicial, nodo_final):
 
 DISTANCIA_MAXIMA_NODOS_CERCA = 0.40
 
-
+#define orientaciones de signo segun
+#E,O,N,S
+signal_orientation = {
+    "N":1,
+    "S":-1,
+    "E":1,
+    "O":-1
+}
 orientaciones = ["N", "E", "S", "O"]
 
 grafo = []
@@ -49,6 +57,9 @@ orientacion_actual = "E"
 posicion_actual_robot = (0,0)
 ultima_posicion_robot = (0,0)
 
+tiempo_posicion_actual = time.time()
+tiempo_ultima_posicion = time.time()
+
 G = nx.Graph()
 G.add_node(nodo_inicial.id, pos=(0, 0))
 
@@ -56,26 +67,28 @@ acaba_de_girar = False
 
 
 def giro(data):
-    global orientacion_actual, orientaciones, grafo, posicion_actual_robot, ultimo_nodo_visitado, ultima_posicion_robot, G, acaba_de_girar
+    global orientacion_actual, orientaciones, grafo, posicion_actual_robot, ultimo_nodo_visitado, ultima_posicion_robot, G, acaba_de_girar,tiempo_posicion_actual,tiempo_ultima_posicion
 
     if acaba_de_girar:
         return
 
-    copia_posicion_actual_robot = posicion_actual_robot # para que no se vaya modificando mientras procesa todo este codigo
+    tiempo_posicion_actual = time.time()
+    copia_tiempo_posicion_actual = tiempo_posicion_actual
+    #copia_posicion_actual_robot =  posicion_actual_robot # para que no se vaya modificando mientras procesa todo este codigo
 
     indice_orientacion_actual = orientaciones.index(orientacion_actual)
 
     posicion_nodo = (0,0)
     if orientacion_actual == "N" or orientacion_actual == "S":
-        posicion_nodo = (ultimo_nodo_visitado.posicion_nodo[0], ultimo_nodo_visitado.posicion_nodo[1] + (copia_posicion_actual_robot[1] - ultima_posicion_robot[1]))
+        posicion_nodo = (ultimo_nodo_visitado.posicion_nodo[0], ultimo_nodo_visitado.posicion_nodo[1] + signal_orientation[orientacion_actual]*(copia_tiempo_posicion_actual - tiempo_ultima_posicion))
     else:
-        posicion_nodo = (ultimo_nodo_visitado.posicion_nodo[0] + (copia_posicion_actual_robot[0] - ultima_posicion_robot[0]), ultimo_nodo_visitado.posicion_nodo[1])
+        posicion_nodo = (ultimo_nodo_visitado.posicion_nodo[0] + signal_orientation[orientacion_actual]*(copia_tiempo_posicion_actual - tiempo_ultima_posicion), ultimo_nodo_visitado.posicion_nodo[1])
     
     print(posicion_nodo) 
     print("posicion actual robot:" )
-    print( copia_posicion_actual_robot)
+    print( copia_tiempo_posicion_actual)
     print("ultima posicion robot:" )
-    print( ultima_posicion_robot)
+    print( tiempo_ultima_posicion)
 
     
     def nodo_cerca_posicion_actual(nodo):
@@ -84,10 +97,12 @@ def giro(data):
     
     distancia_recorrida = 0
     if orientacion_actual == "N" or orientacion_actual == "S":
-        distancia_recorrida = abs(copia_posicion_actual_robot[1] - ultima_posicion_robot[1])
+        distancia_recorrida = abs(copia_tiempo_posicion_actual - tiempo_ultima_posicion)
     else:
-        distancia_recorrida = abs(copia_posicion_actual_robot[0] - ultima_posicion_robot[0])
-
+        distancia_recorrida = abs(copia_tiempo_posicion_actual - tiempo_ultima_posicion)
+    
+    print("distancia:")
+    print(distancia_recorrida)
     indice_orientacion_inversa = (indice_orientacion_actual + 2) % len(orientaciones)
     orientacion_inversa = orientaciones[indice_orientacion_inversa]
 
@@ -136,7 +151,7 @@ def giro(data):
         ultimo_nodo_visitado = nodo_actual
 
 
-    ultima_posicion_robot = copia_posicion_actual_robot
+    tiempo_ultima_posicion = copia_tiempo_posicion_actual
 
     print("orientacion actual: " + orientacion_actual)
 
