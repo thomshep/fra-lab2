@@ -35,7 +35,7 @@ def camino_mas_corto(G, nodo_inicial, nodo_final):
     print(f"Camino: {shortest_path} => Distancia: {shortest_distance}")
 
 
-DISTANCIA_MAXIMA_NODOS_CERCA = 0.40
+DISTANCIA_MAXIMA_NODOS_CERCA = 4
 
 #define orientaciones de signo segun
 #E,O,N,S
