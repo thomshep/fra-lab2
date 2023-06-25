@@ -110,6 +110,16 @@ def datos_process_objects(objeto):
         twist = Twist()
         motor_pub.publish(twist)
         print("veo minotauro -> freno")
+        print("procedo a girar 180")
+        twist.angular = Vector3(0,0,-1)
+        motor_pub.publish(twist)
+        
+        def dejar_girar_180():
+            twist = Twist()
+            motor_pub.publish(twist)
+                   
+        t = threading.Timer(2*TIEMPO_GIRANDO, dejar_girar_180)
+        t.start()
 
 
 def datos_seguidor_lineas(velocidades):
