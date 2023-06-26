@@ -21,4 +21,10 @@ def publicar_giro():
 while True:
     publicar_giro()
     time.sleep(30)
+    publicar_giro()
+    time.sleep(30)
+    publicar_giro()
+    time.sleep(6)
+    publicar_giro()
+    time.sleep(6)
 
