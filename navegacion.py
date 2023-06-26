@@ -80,9 +80,9 @@ def giro(data):
 
     posicion_nodo = (0,0)
     if orientacion_actual == "N" or orientacion_actual == "S":
-        posicion_nodo = (ultimo_nodo_visitado.posicion_nodo[0], ultimo_nodo_visitado.posicion_nodo[1] + signal_orientation[orientacion_actual]*(copia_tiempo_posicion_actual - tiempo_ultima_posicion))
+        posicion_nodo = (int(ultimo_nodo_visitado.posicion_nodo[0]), int(ultimo_nodo_visitado.posicion_nodo[1] + signal_orientation[orientacion_actual]*(copia_tiempo_posicion_actual - tiempo_ultima_posicion)))
     else:
-        posicion_nodo = (ultimo_nodo_visitado.posicion_nodo[0] + signal_orientation[orientacion_actual]*(copia_tiempo_posicion_actual - tiempo_ultima_posicion), ultimo_nodo_visitado.posicion_nodo[1])
+        posicion_nodo = (int(ultimo_nodo_visitado.posicion_nodo[0] + signal_orientation[orientacion_actual]*(copia_tiempo_posicion_actual - tiempo_ultima_posicion)), int(ultimo_nodo_visitado.posicion_nodo[1]))
     
     print(posicion_nodo) 
     print("posicion actual robot:" )
