@@ -187,7 +187,6 @@ def giro(data):
     hilo.start()
 
 
-import atexit
 
 
 
@@ -222,7 +221,6 @@ def signal_handler(signal = None, frame = None):
 
     #camino_mas_corto()
 
-atexit.register(signal_handler)
 
 #esto se va a ejecutar cuando se corte el programa: para en ese momento almacenar el grafo generado
 signal.signal(signal.SIGINT, signal_handler)
