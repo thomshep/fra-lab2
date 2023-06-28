@@ -90,9 +90,9 @@ def datos_process_objects(objeto):
     global estado
    
 
-    if objeto.data == "no" and estado == DETENIDO:
-        estado = AVANZAR
-        return
+    #if objeto.data == "no" and estado == DETENIDO:
+    #    estado = AVANZAR
+    #    return
     
     if estado != AVANZAR:
         return
@@ -103,6 +103,12 @@ def datos_process_objects(objeto):
         twist = Twist()
         motor_pub.publish(twist)
         print("veo roca -> freno")
+        def avanzar():
+            estado = AVANZAR
+            
+        t_avanzar = threading.Timer(2, avanzar)
+        t_avanzar.start()
+    
 
     elif objeto.data == "minotauro":
         estado = DETENIDO
@@ -117,6 +123,7 @@ def datos_process_objects(objeto):
         def dejar_girar_180():
             twist = Twist()
             motor_pub.publish(twist)
+            estado = AVANZAR
                    
         t = threading.Timer(2*TIEMPO_GIRANDO, dejar_girar_180)
         t.start()
