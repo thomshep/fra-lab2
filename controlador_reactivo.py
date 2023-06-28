@@ -7,7 +7,7 @@ import threading
 
 #Constantes:
 TIEMPO_GIRANDO = 5.5
-TIEMPO_RETROCESO = 2
+TIEMPO_RETROCESO = 1
 TIEMPO_EMPEZAR_GIRAR = 1.5
 TIEMPO_ESPERA_DETECCIONES_GIRAR = 1
 DETECCIONES_NECESARIAS_GIRAR = 3
@@ -45,7 +45,7 @@ def datos_hay_pared(hay_pared):
         motor_pub.publish(twist)
         
         print("voy hacia atras")
-        twist.linear = Vector3(-0.2,0,0)
+        twist.linear = Vector3(-0.1,0,0)
         motor_pub.publish(twist)
         
         #empiezo a girar luego de ir hacia atras
@@ -90,9 +90,9 @@ def datos_process_objects(objeto):
     global estado
    
 
-    if objeto.data == "no" and estado == DETENIDO:
-        estado = AVANZAR
-        return
+    #if objeto.data == "no" and estado == DETENIDO:
+    #    estado = AVANZAR
+    #    return
     
     if estado != AVANZAR:
         return
@@ -103,6 +103,12 @@ def datos_process_objects(objeto):
         twist = Twist()
         motor_pub.publish(twist)
         print("veo roca -> freno")
+        def avanzar():
+            estado = AVANZAR
+            
+        t_avanzar = threading.Timer(2, avanzar)
+        t_avanzar.start()
+    
 
     elif objeto.data == "minotauro":
         estado = DETENIDO
@@ -117,6 +123,7 @@ def datos_process_objects(objeto):
         def dejar_girar_180():
             twist = Twist()
             motor_pub.publish(twist)
+            estado = AVANZAR
                    
         t = threading.Timer(2*TIEMPO_GIRANDO, dejar_girar_180)
         t.start()
