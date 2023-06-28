@@ -187,7 +187,7 @@ def giro(data):
     hilo.start()
 
 
-    
+import atexit
 
 
 
@@ -204,7 +204,7 @@ rospy.init_node('navegacion')
 rospy.Subscriber("/navegacion/giro", String, giro)
 rospy.Subscriber('/odom', Odometry, datos_odometria)
 
-def signal_handler(signal, frame):
+def signal_handler(signal = None, frame = None):
     global G
     print("se esta cortando programa")
     # Obtener posiciones de los nodos
@@ -221,6 +221,8 @@ def signal_handler(signal, frame):
     plt.savefig('grafo.png', format='png')
 
     #camino_mas_corto()
+
+atexit.register(signal_handler)
 
 #esto se va a ejecutar cuando se corte el programa: para en ese momento almacenar el grafo generado
 signal.signal(signal.SIGINT, signal_handler)
