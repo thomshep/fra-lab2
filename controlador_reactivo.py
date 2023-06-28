@@ -7,7 +7,7 @@ import threading
 
 #Constantes:
 TIEMPO_GIRANDO = 5.5
-TIEMPO_RETROCESO = 2
+TIEMPO_RETROCESO = 1
 TIEMPO_EMPEZAR_GIRAR = 1.5
 TIEMPO_ESPERA_DETECCIONES_GIRAR = 1
 DETECCIONES_NECESARIAS_GIRAR = 3
@@ -45,7 +45,7 @@ def datos_hay_pared(hay_pared):
         motor_pub.publish(twist)
         
         print("voy hacia atras")
-        twist.linear = Vector3(-0.2,0,0)
+        twist.linear = Vector3(-0.1,0,0)
         motor_pub.publish(twist)
         
         #empiezo a girar luego de ir hacia atras

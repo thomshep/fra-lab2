@@ -1,7 +1,8 @@
 <launch>
 	<node pkg="lab2" name="doblar" type="doblar.py"/>
 	<node pkg="lab2" name="wall_detector" type="wall_detector.py" />
-	<node pkg="lab2" name="camera_filter" type="camera_filter.py" />
+	<node pkg="lab2" name="seguidor_lineas" type="seguidor_lineas.py" />
 	<node pkg="lab2" name="controlador_reactivo" type="controlador_reactivo.py" />
 	<node pkg="lab2" name="process_objects" type="process_objects.py" />
+	<node pkg="lab2" name="navegacion" type="navegacion.py" />
 </launch>
