@@ -52,7 +52,7 @@ nodo_inicial = Nodo(grafo, (0,0), [])
 ultimo_nodo_visitado = nodo_inicial
 grafo.append(ultimo_nodo_visitado)
 
-orientacion_actual = "N"
+orientacion_actual = "E"
 
 posicion_actual_robot = (0,0)
 ultima_posicion_robot = (0,0)
